@@ -52,7 +52,7 @@ end ID_RF;
 architecture Behavioral of ID_RF is
 
 begin
-
+   
 
 end Behavioral;
 
