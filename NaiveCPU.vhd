@@ -343,7 +343,8 @@ architecture Behavioral of NaiveCPU is
                ID_Ry : out STD_LOGIC_VECTOR(15 downto 0);
                ID_IH : out STD_LOGIC_VECTOR(15 downto 0);
                ID_SP : out STD_LOGIC_VECTOR(15 downto 0);
-               ID_T : out STD_LOGIC_VECTOR(15 downto 0));
+               ID_T : out STD_LOGIC_VECTOR(15 downto 0);
+               R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T : out STD_LOGIC_VECTOR(15 downto 0));
     end component;
     
     -- Register Write Back Module
@@ -356,7 +357,7 @@ architecture Behavioral of NaiveCPU is
                MEM_RF_Res : in STD_LOGIC_VECTOR(15 downto 0));
     end component;
     
-    -- VGA Controller
+    --  Controller
     component VGAController
         Port ( clk : in STD_LOGIC;  -- 25 MHz
                rst : in STD_LOGIC;
@@ -449,7 +450,9 @@ architecture Behavioral of NaiveCPU is
     signal MEM_RF_Rd : STD_LOGIC_VECTOR(3 downto 0);
     signal MEM_RF_Res : STD_LOGIC_VECTOR(15 downto 0);
     signal MEM_RF_PC : STD_LOGIC_VECTOR(15 downto 0);
-    signal MEM_RF_St : STD_LOGIC_VECTOR(15 downto 0);    
+    signal MEM_RF_St : STD_LOGIC_VECTOR(15 downto 0);  
+
+    signal R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T : STD_LOGIC_VECTOR(15 downto 0); -- vga
 begin
     Process_ALU: ALU
     port map (
@@ -722,7 +725,19 @@ begin
         ID_Ry => ID_Ry,
         ID_IH => ID_IH,
         ID_SP => ID_SP,
-        ID_T => ID_T
+        ID_T => ID_T,
+        
+        R0 => R0,
+        R1 => R1,
+        R2 => R2,
+        R3 => R3,
+        R4 => R4,
+        R5 => R5,
+        R6 => R6,
+        R7 => R7,
+        IH => IH,
+        SP => SP,
+        T => T
     );
     
     Process_RegWrbModule: RegWrbModule
@@ -744,8 +759,19 @@ begin
         Vs => Vs,
         R => R,
         G => G,
-        B => B
+        B => B,
         
+        R0 => R0,
+        R1 => R1,
+        R2 => R2,
+        R3 => R3,
+        R4 => R4,
+        R5 => R5,
+        R6 => R6,
+        R7 => R7,
+        IH => IH,
+        SP => SP,
+        T => T
 --         R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T : in STD_LOGIC_VECTOR(15 downto 0)
     );
 end Behavioral;
