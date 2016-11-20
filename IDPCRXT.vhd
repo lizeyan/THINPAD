@@ -51,12 +51,14 @@ begin
                 RXTRes <= EXE_RF_Res;
             when "11" => 
                 RXTRes <= MEM_RF_LW;
+				when others =>
+					RXTRes <= "ZZZZZZZZZZZZZZZZ";
         end case;
     end process;
     
     process(RXTRes)
     begin
-        if RXTRes=(others => '0') then
+        if RXTRes = "0000000000000000" then
             EQ <= '1';
         else
             EQ <= '0';
@@ -82,6 +84,8 @@ begin
                 IDPC <= EXE_RF_Res;
             when "11" => 
                 IDPC <= RXTRes;
+				when others =>
+					IDPC <= "ZZZZZZZZZZZZZZZZ";
         end case;
     end process;
 end Behavioral;
