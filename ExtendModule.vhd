@@ -21,7 +21,13 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
-
+use IEEE.numeric_std.all;
+-- EX Digits Op
+-- 000 10:0
+-- 001 7:0
+-- 011 4:0
+-- 010 4:2
+-- others Z... (ILLEGAL)
 entity ExtendModule is
     Port ( ExSrc : in STD_LOGIC_VECTOR(10 downto 0);
            ExImm : out STD_LOGIC_VECTOR(15 downto 0);
@@ -31,8 +37,41 @@ entity ExtendModule is
 end ExtendModule;
 
 architecture Behavioral of ExtendModule is
-
 begin
-
+	process (exsrc, exdigitsop, exsignop)
+		variable sign : STD_LOGIC := '0';
+	begin 
+		if exsignop = '0' then
+			case exdigitsop is
+				when "000" => eximm <= "00000" & exsrc;
+				when "001" => eximm <= "00000000" & exsrc(7 downto 0);
+				when "011" => eximm <= "00000000000" & exsrc (4 downto 0);
+				when "010" => eximm <= "0000000000000" & exsrc (4 downto 2);
+				when others => eximm <= "ZZZZZZZZZZZZZZZZ";
+			end case;
+		elsif exsignop = '1' then
+			case exdigitsop is
+				when "000" => 
+					sign := exsrc(10);
+					eximm (10 downto 0) <= exsrc;
+					eximm (15 downto 11) <= (others => sign);
+				when "001" => 
+					sign := exsrc(7);
+					eximm (7 downto 0) <= exsrc (7 downto 0);
+					eximm (15 downto 8) <= (others => sign);
+				when "011" => 
+					sign := exsrc(4);
+					eximm (4 downto 0) <= exsrc (4 downto 0);
+					eximm (15 downto 5) <= (others => sign);
+				when "010" => 
+					sign := exsrc(4);
+					eximm (2 downto 0) <= exsrc (4 downto 2);
+					eximm (15 downto 3) <= (others => sign);
+				when others => eximm <= "ZZZZZZZZZZZZZZZZ";
+			end case;
+		else
+			eximm <= "ZZZZZZZZZZZZZZZZ";
+		end if;
+	end process;
 
 end Behavioral;
