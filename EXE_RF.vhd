@@ -43,7 +43,7 @@ entity EXE_RF is
            RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0));
 end EXE_RF;
 
-architecture Behavioral of EXE_RF is
+ architecture Behavioral of EXE_RF is
 	signal flags, rd : STD_LOGIC_VECTOR (3 downto 0) := "0000"; --ozsc
 	signal pc, res, rx, ry, st: STD_LOGIC_VECTOR (15 downto 0) := "0000000000000000";
 begin
@@ -55,7 +55,7 @@ begin
 	rf_ry_out <= ry;
 	rf_st_out <= st;
 	
-	process (clk, exe_rfop, rf_flags_in, rf_pc_in, rf_rd_in, rf_res_in, rf_rx_in, rf_ry_in, rf_st_in)
+	process (clk)
 	begin
 		if rising_edge (clk) then
 			if exe_rfOP  = "00" or exe_rfop = "01" then
