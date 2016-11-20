@@ -258,11 +258,11 @@ architecture Behavioral of NaiveCPU is
         Port ( clk : in STD_LOGIC;
                IF_RFOp : in STD_LOGIC_VECTOR(1 downto 0);  -- 10 for WE_N, 11 for NOP, 0- for WE
                
-               RF_PC_In : STD_LOGIC_VECTOR(15 downto 0);
-               RF_Ins_In : STD_LOGIC_VECTOR(15 downto 0);
+               RF_PC_In : in STD_LOGIC_VECTOR(15 downto 0);
+               RF_Ins_In : in STD_LOGIC_VECTOR(15 downto 0);
                
-               RF_PC_Out : STD_LOGIC_VECTOR(15 downto 0);
-               RF_Ins_Out : STD_LOGIC_VECTOR(15 downto 0));
+               RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
+               RF_Ins_Out : out STD_LOGIC_VECTOR(15 downto 0));
     end component;
     
     -- MEM/WB Register
@@ -523,6 +523,7 @@ begin
         ExDigitsOp => ExDigitsOp,
         ExSignOp => ExSignOp,
         IDPCOp => IDPCOp,
+        RamEn => RamEn,
         RamRWOp => RamRWOp,
         RegWrbOp => RegWrbOp,
         RXTOp => RXTOp,
