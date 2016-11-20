@@ -26,16 +26,26 @@ entity IF_RF is
     Port ( clk : in STD_LOGIC;
            IF_RFOp : in STD_LOGIC_VECTOR(1 downto 0);  -- 10 for WE_N, 11 for NOP, 0- for WE
            
-           RF_PC_In : STD_LOGIC_VECTOR(15 downto 0);
-           RF_Ins_In : STD_LOGIC_VECTOR(15 downto 0);
+           RF_PC_In : in STD_LOGIC_VECTOR(15 downto 0);
+           RF_Ins_In : in STD_LOGIC_VECTOR(15 downto 0);
            
-           RF_PC_Out : STD_LOGIC_VECTOR(15 downto 0);
-           RF_Ins_Out : STD_LOGIC_VECTOR(15 downto 0));
+           RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
+           RF_Ins_Out : out STD_LOGIC_VECTOR(15 downto 0));
 end IF_RF;
 
 architecture Behavioral of IF_RF is
-
 begin
-
-
+    process(clk)
+    begin
+        if(clk'event and clk='1') then
+            if(IF_RFOp = "11") then
+                RF_Ins_Out <= "0000100000000000";
+                RF_PC_Out <= RF_PC_In;
+            elsif(IF_RFOp(1) = '0') then
+                RF_Ins_Out <= RF_Ins_In;
+                RF_PC_Out <= RF_PC_In;
+            end if;
+        end if;
+        
+    end process;
 end Behavioral;

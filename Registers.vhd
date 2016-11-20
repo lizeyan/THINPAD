@@ -33,7 +33,8 @@ entity Registers is
            ID_Ry : out STD_LOGIC_VECTOR(15 downto 0);
            ID_IH : out STD_LOGIC_VECTOR(15 downto 0);
            ID_SP : out STD_LOGIC_VECTOR(15 downto 0);
-           ID_T : out STD_LOGIC_VECTOR(15 downto 0));
+           ID_T : out STD_LOGIC_VECTOR(15 downto 0);
+           R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T : out STD_LOGIC_VECTOR(15 downto 0));
 end Registers;
 
 architecture Behavioral of Registers is
@@ -46,8 +47,22 @@ architecture Behavioral of Registers is
     type regs is array(10 downto 0) of std_logic_vector(15 downto 0);
     signal data : regs := (others => (others => '0'));
 begin
+    process(data)
+    begin
+        R0 <= data(0);
+        R1 <= data(1);
+        R2 <= data(2);
+        R3 <= data(3);
+        R4 <= data(4);
+        R5 <= data(5);
+        R6 <= data(6);
+        R7 <= data(7);
+        IH <= data(8);
+        SP <= data(9);
+        T <= data(10);
+     end process;
 --read
-    process(IF_RF_RX, IF_RF_RY, RegWrbAddr, RegWrbData)
+    process(data, IF_RF_RX, IF_RF_RY, RegWrbAddr, RegWrbData)
     begin
         ID_Rx <= data(conv_integer(IF_RF_RX));
         ID_RY <= data(conv_integer(IF_RF_RY));
