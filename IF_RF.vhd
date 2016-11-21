@@ -34,16 +34,19 @@ entity IF_RF is
 end IF_RF;
 
 architecture Behavioral of IF_RF is
+    signal pc, ins : std_logic_vector(15 downto 0);
 begin
     process(clk)
     begin
+        RF_PC_OUT <= pc;
+        RF_INS_OUT <= ins;
         if(clk'event and clk='1') then
             if(IF_RFOp = "11") then
-                RF_Ins_Out <= "0000100000000000";
-                RF_PC_Out <= RF_PC_In;
+                ins <= "0000100000000000";
+                pc <= RF_PC_In;
             elsif(IF_RFOp(1) = '0') then
-                RF_Ins_Out <= RF_Ins_In;
-                RF_PC_Out <= RF_PC_In;
+                ins<= RF_Ins_In;
+                pc <= RF_PC_In;
             end if;
         end if;
         
