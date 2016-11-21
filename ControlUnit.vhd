@@ -34,6 +34,7 @@ entity ControlUnit is
            BMuxOp : out STD_LOGIC_VECTOR(2 downto 0);
            DirOp : out STD_LOGIC_VECTOR(2 downto 0);
            IDPCOp : out STD_LOGIC_VECTOR(1 downto 0);
+           
            RegWrbOp : out STD_LOGIC_VECTOR(1 downto 0);
            RXTOp : out STD_LOGIC_VECTOR(1 downto 0);
            SWSrc : out STD_LOGIC; -- 0 rx, 1 ry

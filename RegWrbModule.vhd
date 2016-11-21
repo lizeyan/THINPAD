@@ -22,6 +22,11 @@ use IEEE.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
 
+-- 选择写回寄存器的数据
+-- 00 res
+-- 11 ILLEGAL
+-- 01 lw
+-- 10 flag_sign
 entity RegWrbModule is
     Port ( RegWrbOp : in STD_LOGIC_VECTOR(1 downto 0);
            RegWrbOut : out STD_LOGIC_VECTOR(15 downto 0);
@@ -32,8 +37,19 @@ entity RegWrbModule is
 end RegWrbModule;
 
 architecture Behavioral of RegWrbModule is
-
 begin
-
+		process (regwrbop, mem_rf_flagsign, mem_rf_lw, mem_rf_res)
+		begin
+			case regwrbop is
+				when "00" =>
+					regwrbout <= mem_rf_res;
+				when "01" =>
+					regwrbout <= mem_rf_lw;
+				when "10" =>
+					regwrbout <= "000000000000000" & mem_rf_flagsign;
+				when others =>
+					regwrbout <= "ZZZZZZZZZZZZZZZZ";
+			end case;
+		end process;
 
 end Behavioral;
