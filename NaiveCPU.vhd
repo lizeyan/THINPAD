@@ -260,9 +260,11 @@ architecture Behavioral of NaiveCPU is
                
                RF_PC_In : in STD_LOGIC_VECTOR(15 downto 0);
                RF_Ins_In : in STD_LOGIC_VECTOR(15 downto 0);
+               RF_Imm_In : in std_logic_vector(15 downto 0);
                
                RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
-               RF_Ins_Out : out STD_LOGIC_VECTOR(15 downto 0));
+               RF_Ins_Out : out STD_LOGIC_VECTOR(15 downto 0);
+               RF_Imm_Out : out std_logic_vector(15 downto 0));
     end component;
     
     -- MEM/WB Register
@@ -399,6 +401,7 @@ architecture Behavioral of NaiveCPU is
     
     signal IF_Ins : STD_LOGIC_VECTOR(15 downto 0);
     signal IF_Res : STD_LOGIC_VECTOR(15 downto 0);
+    signal IF_Imm : STD_LOGIC_VECTOR(15 downto 0);
     
     signal ID_IH : STD_LOGIC_VECTOR(15 downto 0);
     signal ID_Imm : STD_LOGIC_VECTOR(15 downto 0);
@@ -425,6 +428,7 @@ architecture Behavioral of NaiveCPU is
     
     signal IF_RF_PC : STD_LOGIC_VECTOR(15 downto 0);
     signal IF_RF_Ins : STD_LOGIC_VECTOR(15 downto 0);
+    signal IF_RF_Imm : STD_LOGIC_VECTOR(15 downto 0);
     
     signal ID_RF_Imm : STD_LOGIC_VECTOR(15 downto 0);
     signal ID_RF_IH : STD_LOGIC_VECTOR(15 downto 0);
@@ -577,8 +581,8 @@ begin
     
     Process_ExtendModule: ExtendModule
     port map (
-        ExSrc => IF_RF_Ins(10 downto 0),
-        ExImm => ID_Imm,
+        ExSrc => PC_RF_PC(10 downto 0),
+        ExImm => IF_Imm,
         
         ExDigitsOp => ExDigitsOp,
         ExSignOp => ExSignOp
@@ -619,7 +623,7 @@ begin
         RF_Rx_In => ID_Rx,
         RF_Ry_In => ID_Ry,
         RF_SP_In => ID_SP,
-        RF_St_In => IF_RF_Ins(15 downto 0),
+        RF_St_In => IF_RF_Ins,
         RF_T_In => ID_T,
         
         RF_Imm_Out => ID_RF_Imm,
@@ -647,9 +651,11 @@ begin
         
         RF_PC_In => IF_Res,
         RF_Ins_In => IF_Ins,
+        RF_Imm_In => IF_Imm,
         
         RF_PC_Out => IF_RF_PC,
-        RF_Ins_Out => IF_RF_Ins
+        RF_Ins_Out => IF_RF_Ins,
+        RF_Imm_Out => IF_RF_Imm
     );
     
     Process_MEM_RF: MEM_RF

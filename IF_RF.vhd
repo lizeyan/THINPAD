@@ -28,25 +28,30 @@ entity IF_RF is
            
            RF_PC_In : in STD_LOGIC_VECTOR(15 downto 0);
            RF_Ins_In : in STD_LOGIC_VECTOR(15 downto 0);
+           RF_Imm_In : in std_logic_vector(15 downto 0);
            
            RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
-           RF_Ins_Out : out STD_LOGIC_VECTOR(15 downto 0));
+           RF_Ins_Out : out STD_LOGIC_VECTOR(15 downto 0);
+           RF_Imm_Out : out std_logic_vector(15 downto 0));
 end IF_RF;
 
 architecture Behavioral of IF_RF is
-    signal pc, ins : std_logic_vector(15 downto 0);
+    signal pc, ins, imm : std_logic_vector(15 downto 0);
 begin
     process(clk)
     begin
         RF_PC_OUT <= pc;
         RF_INS_OUT <= ins;
+        RF_Imm_Out <= imm;
         if(clk'event and clk='1') then
             if(IF_RFOp = "11") then
                 ins <= "0000100000000000";
+                imm <= "0000000000000000";
                 pc <= RF_PC_In;
             elsif(IF_RFOp(1) = '0') then
                 ins<= RF_Ins_In;
                 pc <= RF_PC_In;
+                imm <= RF_Imm_In;
             end if;
         end if;
         
