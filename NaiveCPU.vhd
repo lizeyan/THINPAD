@@ -502,7 +502,7 @@ architecture Behavioral of NaiveCPU is
 begin
     Process_ALU: ALU
     port map (
-        AluOp => AluOp,
+        AluOp => ID_RF_AluOp,
         ASrc => ASrc,
         BSrc => BSrc,
         
@@ -512,7 +512,7 @@ begin
     
     Process_AMux: AMux
     port map (
-        AMuxOp => AMuxOp,
+        AMuxOp => ID_RF_AMuxOp,
         ASrc => ASrc,
         
         EXE_RF_Res => EXE_RF_Res,
@@ -528,7 +528,7 @@ begin
     
     Process_BMux: BMux
     port map (
-        BMuxOp => BMuxOp,
+        BMuxOp => ID_RF_BMuxOp,
         BSrc => BSrc,
         
         EXE_RF_Res => EXE_RF_Res,
@@ -757,8 +757,8 @@ begin
         EXE_RF_Ry => EXE_RF_Ry,
         MEM_LW => MEM_LW,
         
-        RamEn => RamEn,
-        RamRWOp => RamRWOp,
+        RamEn => EXE_RF_RamEn,
+        RamRWOp => EXE_RF_RamRWOp,
         
         Addr1 => Addr1,
         Addr2 => Addr2,
@@ -816,7 +816,7 @@ begin
     
     Process_RegWrbModule: RegWrbModule
     port map (
-        RegWrbOp => RegWrbOp,
+        RegWrbOp => MEM_RF_RegWrbOp,
         RegWrbOut => RegWrbData,
         
         MEM_RF_FlagSign => MEM_RF_Flags(1),
