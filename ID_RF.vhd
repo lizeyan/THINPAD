@@ -63,32 +63,36 @@ begin
     RF_SP_Out <= sp;
     RF_St_out <= st;
     RF_T_Out <= t;
+    
     process(clk)
     begin
-        if(ID_RFOp="11") then -- nop
-            imm <= "0000000000000000";
-			res <= "0000000000000000";
-            rd <= "1111";
-            rx <= "0000000000000000";
-			ry <= "0000000000000000";
-			st <= "0000100000000000";
-            
-            ih <= RF_IH_IN;
-            pc <= RF_PC_IN;
-            sp <= RF_SP_IN;
-            t <= RF_T_IN;
-        elsif(ID_RFOp(1)='0') then
-            imm <= RF_Imm_IN;
-			res <= RF_Res_IN;
-            rd <= RF_Rd_IN;
-            rx <= RF_RX_IN;
-			ry <= RF_RY_IN;
-			st <= RF_ST_IN;
-            
-            ih <= RF_IH_IN;
-            pc <= RF_PC_IN;
-            sp <= RF_SP_IN;
-            t <= RF_T_IN;
+        if(clk'event and clk='1') then 
+            if(ID_RFOp="11") then -- nop
+                imm <= "0000000000000000";
+                res <= "0000000000000000";
+                rd <= "1111";
+                rx <= "0000000000000000";
+                ry <= "0000000000000000";
+                st <= "0000100000000000";
+                
+                ih <= RF_IH_IN;
+                pc <= RF_PC_IN;
+                sp <= RF_SP_IN;
+                t <= RF_T_IN;
+            elsif(ID_RFOp="00" or ID_RFOp="01") then
+                imm <= RF_Imm_IN;
+                res <= RF_Res_IN;
+                rd <= RF_Rd_IN;
+                rx <= RF_RX_IN;
+                ry <= RF_RY_IN;
+                st <= RF_ST_IN;
+                
+                ih <= RF_IH_IN;
+                pc <= RF_PC_IN;
+                sp <= RF_SP_IN;
+                t <= RF_T_IN;
+            else
+            end if;
         end if;
     end process;
 

@@ -38,11 +38,12 @@ end IF_RF;
 architecture Behavioral of IF_RF is
     signal pc, ins, imm : std_logic_vector(15 downto 0);
 begin
+    RF_INS_OUT <= ins;
+    RF_Imm_Out <= imm;
+    RF_PC_OUT <= pc;
+    
     process(clk)
     begin
-        RF_PC_OUT <= pc;
-        RF_INS_OUT <= ins;
-        RF_Imm_Out <= imm;
         if(clk'event and clk='1') then
             if(IF_RFOp = "11") then
                 ins <= "0000100000000000";
@@ -52,6 +53,7 @@ begin
                 ins<= RF_Ins_In;
                 pc <= RF_PC_In;
                 imm <= RF_Imm_In;
+            else
             end if;
         end if;
         

@@ -70,6 +70,7 @@ begin
 				rd <= "1111";
 				res <= "0000000000000000";
 				st <= "0000100000000000";
+            else
 			end if;
 		end if;
 	end process;
