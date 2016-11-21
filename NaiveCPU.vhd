@@ -741,7 +741,7 @@ begin
         RF_Res_Out => MEM_RF_Res,
         RF_PC_Out => MEM_RF_PC,
         RF_St_Out => MEM_RF_St,
-        RF_RegWrbOp_OUT => MEM_RegWrbOp
+        RF_RegWrbOp_OUT => MEM_RF_RegWrbOp
     );
     
     Process_MemUart: MemUart
