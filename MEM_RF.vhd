@@ -54,21 +54,23 @@ begin
 	rf_pc_out <= pc;
 	rf_st_out <= st;
 
-	process (clk, mem_rfop, rf_flags_in, rf_lw_in, rf_rd_in, rf_res_in, rf_pc_in, rf_st_in)
+	process (clk)
 	begin
-		pc <= rf_pc_in;
-		if mem_rfop = "00" or mem_rfop = "01" then
-			flags <= rf_flags_in;
-			lw <= rf_lw_in;
-			rd <= rf_rd_in;
-			res <= rf_Res_in;
-			st <= rf_st_in;
-		elsif mem_rfop = "11" then
-			flags <= "0000";
-			lw <= "0000000000000000";
-			rd <= "1111";
-			res <= "0000000000000000";
-			st <= "0000100000000000";
+		if rising_edge (clk) then
+			pc <= rf_pc_in;
+			if mem_rfop = "00" or mem_rfop = "01" then
+				flags <= rf_flags_in;
+				lw <= rf_lw_in;
+				rd <= rf_rd_in;
+				res <= rf_Res_in;
+				st <= rf_st_in;
+			elsif mem_rfop = "11" then
+				flags <= "0000";
+				lw <= "0000000000000000";
+				rd <= "1111";
+				res <= "0000000000000000";
+				st <= "0000100000000000";
+			end if;
 		end if;
 	end process;
 end Behavioral;
