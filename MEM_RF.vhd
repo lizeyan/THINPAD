@@ -35,15 +35,20 @@ entity MEM_RF is
            RF_PC_In : in STD_LOGIC_VECTOR(15 downto 0);
            RF_St_In : in STD_LOGIC_VECTOR(15 downto 0);
            
+           RF_RegWrbOp_IN : in std_logic_vector(1 downto 0);
+           
            RF_Flags_Out : out STD_LOGIC_VECTOR(3 downto 0);
            RF_LW_Out : out STD_LOGIC_VECTOR(15 downto 0);
            RF_Rd_Out : out STD_LOGIC_VECTOR(3 downto 0);
            RF_Res_Out : out STD_LOGIC_VECTOR(15 downto 0);
            RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
-           RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0));
+           RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0);
+           
+           RF_RegWrbOp_OUT : out std_logic_vector(1 downto 0));
 end MEM_RF;
 
 architecture Behavioral of MEM_RF is
+    signal regwrb : std_logic_vector(1 downto 0);
 	signal flags, rd : STD_LOGIC_VECTOR (3 downto 0);
 	signal lw, res, pc, st : STD_LOGIC_VECTOR (15 downto 0);
 begin
@@ -53,6 +58,7 @@ begin
 	rf_res_out <= res;
 	rf_pc_out <= pc;
 	rf_st_out <= st;
+    rf_regwrbop_out <= regwrb;
 
 	process (clk)
 	begin
@@ -64,12 +70,14 @@ begin
 				rd <= rf_rd_in;
 				res <= rf_Res_in;
 				st <= rf_st_in;
+                regwrb <= rf_regwrbop_in;
 			elsif mem_rfop = "11" then
 				flags <= "0000";
 				lw <= "0000000000000000";
 				rd <= "1111";
 				res <= "0000000000000000";
 				st <= "0000100000000000";
+                regwrb <= "11";
             else
 			end if;
 		end if;

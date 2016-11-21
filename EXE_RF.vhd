@@ -34,16 +34,25 @@ entity EXE_RF is
            RF_Ry_In : in STD_LOGIC_VECTOR(15 downto 0);
            RF_St_In : in STD_LOGIC_VECTOR(15 downto 0);
            
+           RF_RamEN_IN : in std_logic_vector(1 downto 0);
+           RF_RamRWOp_IN : in std_logic_vector(1 downto 0);
+           RF_RegWrbOp_IN : in std_logic_vector(1 downto 0);
+           
            RF_Flags_Out : out STD_LOGIC_VECTOR(3 downto 0);
            RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
            RF_Rd_Out : out STD_LOGIC_VECTOR(3 downto 0);
            RF_Res_Out : out STD_LOGIC_VECTOR(15 downto 0);
            RF_Rx_Out : out STD_LOGIC_VECTOR(15 downto 0);
            RF_Ry_Out : out STD_LOGIC_VECTOR(15 downto 0);
-           RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0));
+           RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0);
+           
+           RF_RamEN_OUT : out std_logic_vector(1 downto 0);
+           RF_RamRWOp_OUT : out std_logic_vector(1 downto 0);
+           RF_RegWrbOp_OUT : out std_logic_vector(1 downto 0));
 end EXE_RF;
 
  architecture Behavioral of EXE_RF is
+    signal ramen, ramrw, regwrb : std_logic_vector(1 downto 0);
 	signal flags, rd : STD_LOGIC_VECTOR (3 downto 0) := "0000"; --ozsc
 	signal pc, res, rx, ry, st: STD_LOGIC_VECTOR (15 downto 0) := "0000000000000000";
 begin
@@ -54,6 +63,10 @@ begin
 	rf_rx_out <= rx;
 	rf_ry_out <= ry;
 	rf_st_out <= st;
+    
+    RF_RamEN_OUT <= ramen;
+    RF_RamRWOp_OUT <= ramrw;
+    RF_RegWrbOp_OUT <= regwrb;
 	
 	process (clk)
 	begin
@@ -66,6 +79,10 @@ begin
 					rx <= rf_rx_in;
 					ry <= rf_ry_in;
 					st <= rf_st_in;
+                    
+                    ramen <= "11";
+                    ramrw <= "11";
+                    regwrb <= "11";
 			elsif exe_rfop = "11" then
 					flags <= "0000";
 					pc <= "0000000000000000"; -- ?
@@ -74,6 +91,10 @@ begin
 					rx <= "0000000000000000";
 					ry <= "0000000000000000";
 					st <= "0000100000000000";
+                    
+                    ramen <= RF_RAMEN_IN;
+                    ramrw <= RF_RAMRWOP_IN;
+                    regwrb <= RF_REGWRBOP_IN;
             else
 			end if;
 		end if;

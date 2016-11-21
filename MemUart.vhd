@@ -37,8 +37,7 @@ entity MemUart is
            MEM_LW : out STD_LOGIC_VECTOR(15 downto 0);
            
            -- IF & MEM
-			  -- 
-			  RamEN: in STD_LOGIC_VECTOR(1 downto 0); --第1位ram1， 第0位ram2
+           RamEN: in STD_LOGIC_VECTOR(1 downto 0); --第1位ram1， 第0位ram2
            RamRWOp : in STD_LOGIC_VECTOR(1 downto 0);  -- (1) for Ram1, (0) for Ram2; 0 for R, 1 for W
            
            Addr1 : out STD_LOGIC_VECTOR(15 downto 0);

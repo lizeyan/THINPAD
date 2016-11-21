@@ -179,13 +179,21 @@ architecture Behavioral of NaiveCPU is
                RF_Ry_In : in STD_LOGIC_VECTOR(15 downto 0);
                RF_St_In : in STD_LOGIC_VECTOR(15 downto 0);
                
+               RF_RamEN_IN : in std_logic_vector(1 downto 0);
+               RF_RamRWOp_IN : in std_logic_vector(1 downto 0);
+               RF_RegWrbOp_IN : in std_logic_vector(1 downto 0);
+               
                RF_Flags_Out : out STD_LOGIC_VECTOR(3 downto 0);
                RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
                RF_Rd_Out : out STD_LOGIC_VECTOR(3 downto 0);
                RF_Res_Out : out STD_LOGIC_VECTOR(15 downto 0);
                RF_Rx_Out : out STD_LOGIC_VECTOR(15 downto 0);
                RF_Ry_Out : out STD_LOGIC_VECTOR(15 downto 0);
-               RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0));
+               RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0);
+               
+               RF_RamEN_OUT : out std_logic_vector(1 downto 0);
+               RF_RamRWOp_OUT : out std_logic_vector(1 downto 0);
+               RF_RegWrbOp_OUT : out std_logic_vector(1 downto 0));
     end component;
     
     -- Extend Module
@@ -235,6 +243,13 @@ architecture Behavioral of NaiveCPU is
                RF_St_In : in STD_LOGIC_VECTOR(15 downto 0);
                RF_T_In : in STD_LOGIC_VECTOR(15 downto 0);
                
+               RF_ALUOp_IN : in std_logic_vector(3 downto 0);
+               RF_AMUXOp_IN : in std_logic_vector(3 downto 0);
+               RF_BMUXOp_IN : in std_logic_vector(2 downto 0);
+               RF_RamEN_IN : in std_logic_vector(1 downto 0);
+               RF_RamRWOp_IN : in std_logic_vector(1 downto 0);
+               RF_RegWrbOp_IN : in std_logic_vector(1 downto 0);
+               
                RF_Imm_Out : out STD_LOGIC_VECTOR(15 downto 0);
                RF_IH_Out : out STD_LOGIC_VECTOR(15 downto 0);
                RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
@@ -244,7 +259,14 @@ architecture Behavioral of NaiveCPU is
                RF_Ry_Out : out STD_LOGIC_VECTOR(15 downto 0);
                RF_SP_Out : out STD_LOGIC_VECTOR(15 downto 0);
                RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0);
-               RF_T_Out : out STD_LOGIC_VECTOR(15 downto 0));
+               RF_T_Out : out STD_LOGIC_VECTOR(15 downto 0);
+               
+               RF_ALUOp_OUT : out std_logic_vector(3 downto 0);
+               RF_AMUXOp_OUT : out std_logic_vector(3 downto 0);
+               RF_BMUXOp_OUT : out std_logic_vector(2 downto 0);
+               RF_RamEN_OUT : out std_logic_vector(1 downto 0);
+               RF_RamRWOp_OUT : out std_logic_vector(1 downto 0);
+               RF_RegWrbOp_OUT : out std_logic_vector(1 downto 0));
     end component;
     
     -- IF PC Adder
@@ -279,12 +301,16 @@ architecture Behavioral of NaiveCPU is
                RF_PC_In : in STD_LOGIC_VECTOR(15 downto 0);
                RF_St_In : in STD_LOGIC_VECTOR(15 downto 0);
                
+               RF_RegWrbOp_IN : in std_logic_vector(1 downto 0);
+               
                RF_Flags_Out : out STD_LOGIC_VECTOR(3 downto 0);
                RF_LW_Out : out STD_LOGIC_VECTOR(15 downto 0);
                RF_Rd_Out : out STD_LOGIC_VECTOR(3 downto 0);
                RF_Res_Out : out STD_LOGIC_VECTOR(15 downto 0);
                RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
-               RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0));
+               RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0);
+               
+               RF_RegWrbOp_OUT : out std_logic_vector(1 downto 0));
     end component;
     
     -- Mem & Uart
@@ -303,6 +329,7 @@ architecture Behavioral of NaiveCPU is
                MEM_LW : out STD_LOGIC_VECTOR(15 downto 0);
                
                -- IF & MEM
+               RamEN: in STD_LOGIC_VECTOR(1 downto 0); --第1位ram1， 第0位ram2
                RamRWOp : in STD_LOGIC_VECTOR(1 downto 0);  -- (1) for Ram1, (0) for Ram2; 0 for R, 1 for W
                
                Addr1 : out STD_LOGIC_VECTOR(15 downto 0);
@@ -455,6 +482,21 @@ architecture Behavioral of NaiveCPU is
     signal MEM_RF_Res : STD_LOGIC_VECTOR(15 downto 0);
     signal MEM_RF_PC : STD_LOGIC_VECTOR(15 downto 0);
     signal MEM_RF_St : STD_LOGIC_VECTOR(15 downto 0);  
+    
+    -- control signal in rf
+    
+    signal ID_RF_ALUOp : std_logic_vector(3 downto 0);
+    signal ID_RF_AMUXOp : std_logic_vector(3 downto 0);
+    signal ID_RF_BMUXOp : std_logic_vector(2 downto 0);
+    signal ID_RF_RamEn : std_logic_vector(1 downto 0);
+    signal ID_RF_RamRWOp : std_logic_vector(1 downto 0);
+    signal ID_RF_RegWrbOp : std_logic_vector(1 downto 0);
+    
+    signal EXE_RF_RamEn : std_logic_vector(1 downto 0);
+    signal EXE_RF_RamRWOp : std_logic_vector(1 downto 0);
+    signal EXE_RF_RegWrbOp : std_logic_vector(1 downto 0);
+    
+    signal MEM_RF_RegWrbOp : std_logic_vector(1 downto 0);
 
     signal R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T : STD_LOGIC_VECTOR(15 downto 0); -- vga
 begin
@@ -570,13 +612,21 @@ begin
         RF_Ry_In => ID_RF_Ry,
         RF_St_In => ID_RF_St,
         
+        RF_RamEN_IN => ID_RF_RAMEN,
+        RF_RamRWOp_IN => ID_RF_RAMRWOP,
+        RF_RegWrbOp_IN => ID_RF_REGWRBOP,
+        
         RF_Flags_Out => EXE_RF_Flags,
         RF_PC_Out => EXE_RF_PC,
         RF_Rd_Out => EXE_RF_Rd,
         RF_Res_Out => EXE_RF_Res,
         RF_Rx_Out => EXE_RF_Rx,
         RF_Ry_Out => EXE_RF_Ry,
-        RF_St_Out => EXE_RF_St
+        RF_St_Out => EXE_RF_St,
+        
+        RF_RamEN_OUT => EXE_RF_RAMEN,
+        RF_RamRWOp_OUT => EXE_RF_RAMRWOP,
+        RF_RegWrbOp_OUT => EXE_RF_REGWRBOP
     );
     
     Process_ExtendModule: ExtendModule
@@ -626,6 +676,13 @@ begin
         RF_St_In => IF_RF_Ins,
         RF_T_In => ID_T,
         
+        RF_ALUOp_IN => ALUOP,
+        RF_AMUXOp_IN => AMUXOP,
+        RF_BMUXOp_IN => BMUXOP,
+        RF_RamEN_IN => RAMEN,
+        RF_RamRWOp_IN => RAMRWOP,
+        RF_RegWrbOp_IN => REGWRBOP,
+        
         RF_Imm_Out => ID_RF_Imm,
         RF_IH_Out => ID_RF_IH,
         RF_PC_Out => ID_RF_PC,
@@ -635,7 +692,14 @@ begin
         RF_Ry_Out => ID_RF_Ry,
         RF_SP_Out => ID_RF_SP,
         RF_St_Out => ID_RF_St,
-        RF_T_Out => ID_RF_T
+        RF_T_Out => ID_RF_T,
+        
+        RF_ALUOp_OUT => ID_RF_ALUOP,
+        RF_AMUXOp_OUT => ID_RF_AMUXOP,
+        RF_BMUXOp_OUT => ID_RF_BMUXOP,
+        RF_RamEN_OUT => ID_RF_RAMEN,
+        RF_RamRWOp_OUT => ID_RF_RAMRWOP,
+        RF_RegWrbOp_OUT => ID_RF_REGWRBOP
     );
     
     Process_IF_PCAdder: IF_PCAdder
@@ -669,13 +733,15 @@ begin
         RF_Res_In => EXE_RF_Res,
         RF_PC_In => EXE_RF_PC,
         RF_St_In => EXE_RF_St,
+        RF_RegWrbOp_IN => EXE_RF_RegWrbOp,
         
         RF_Flags_Out => MEM_RF_Flags,
         RF_LW_Out => MEM_RF_LW,
         RF_Rd_Out => MEM_RF_Rd,
         RF_Res_Out => MEM_RF_Res,
         RF_PC_Out => MEM_RF_PC,
-        RF_St_Out => MEM_RF_St
+        RF_St_Out => MEM_RF_St,
+        RF_RegWrbOp_OUT => MEM_RegWrbOp
     );
     
     Process_MemUart: MemUart
@@ -691,6 +757,7 @@ begin
         EXE_RF_Ry => EXE_RF_Ry,
         MEM_LW => MEM_LW,
         
+        RamEn => RamEn,
         RamRWOp => RamRWOp,
         
         Addr1 => Addr1,
