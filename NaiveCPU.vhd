@@ -124,11 +124,16 @@ architecture Behavioral of NaiveCPU is
                DirOp : out STD_LOGIC_VECTOR(2 downto 0); --rd的选择信号
                ExDigitsOp : out STD_LOGIC_VECTOR(2 downto 0); --扩展位数控制
                ExSignOp : out STD_LOGIC; 
-               IDPCOp : out STD_LOGIC_VECTOR(1 downto 0); --是不是跳转指令
-			   RamEn: out STD_LOGIC_VECTOR(1 downto 0);
-               RamRWOp : out STD_LOGIC_VECTOR(1 downto 0); 
+               IDPCOp : out STD_LOGIC_VECTOR(1 downto 0);  
                RegWrbOp : out STD_LOGIC_VECTOR(1 downto 0);
                RXTOp : out STD_LOGIC_VECTOR(1 downto 0);
+               -- add
+               PC_SrcOP : OUT STD_LOGIC_VECTOR(1 DOWNTO 0);
+               BTBOP : OUT STD_LOGIC;
+               SWSRC : OUT STD_LOGIC;
+               RamRWOP : OUT STD_LOGIC;
+               IF_EN : OUT STD_LOGIC;
+               
                
                EXE_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
                ID_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
@@ -415,10 +420,14 @@ architecture Behavioral of NaiveCPU is
     signal ExDigitsOp : STD_LOGIC_VECTOR(2 downto 0);
     signal ExSignOp : STD_LOGIC;
     signal IDPCOp : STD_LOGIC_VECTOR(1 downto 0);
-	signal RamEn: STD_LOGIC_VECTOR (1 downto 0);
-    signal RamRWOp: STD_LOGIC_VECTOR(1 downto 0);
     signal RegWrbOp : STD_LOGIC_VECTOR(1 downto 0);
     signal RXTOp : STD_LOGIC_VECTOR(1 downto 0);
+        --add
+    signal PC_SrcOP : STD_LOGIC_VECTOR(1 DOWNTO 0);
+    signal BTBOP : STD_LOGIC;
+    signal SWSRC : STD_LOGIC;
+    signal RamRWOP : STD_LOGIC;
+    signal IF_EN : STD_LOGIC;
     
     signal EXE_RFOp : STD_LOGIC_VECTOR(1 downto 0);
     signal ID_RFOp : STD_LOGIC_VECTOR(1 downto 0);
@@ -569,10 +578,14 @@ begin
         ExDigitsOp => ExDigitsOp,
         ExSignOp => ExSignOp,
         IDPCOp => IDPCOp,
-        RamEn => RamEn,
-        RamRWOp => RamRWOp,
         RegWrbOp => RegWrbOp,
         RXTOp => RXTOp,
+        -- ADD
+        PC_SRCOP => PC_SRCOP,
+        BTBOP => BTBOP,
+        SWSRC => SWSRC,
+        RAMRWOP => RAMRWOP,
+        IF_EN => IF_EN,
         
         EXE_RFOp => EXE_RFOp,
         ID_RFOp => ID_RFOp,
@@ -631,7 +644,7 @@ begin
     
     Process_ExtendModule: ExtendModule
     port map (
-        ExSrc => PC_RF_PC(10 downto 0),
+        ExSrc => IF_Ins(10 downto 0),
         ExImm => IF_Imm,
         
         ExDigitsOp => ExDigitsOp,

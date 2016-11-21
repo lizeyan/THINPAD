@@ -27,6 +27,7 @@ use IEEE.numeric_std.all;
 -- 001 7:0
 -- 011 4:0
 -- 010 4:2
+-- 110 3:0
 -- others Z... (ILLEGAL)
 entity ExtendModule is
     Port ( ExSrc : in STD_LOGIC_VECTOR(10 downto 0);
@@ -47,6 +48,7 @@ begin
 				when "001" => eximm <= "00000000" & exsrc(7 downto 0);
 				when "011" => eximm <= "00000000000" & exsrc (4 downto 0);
 				when "010" => eximm <= "0000000000000" & exsrc (4 downto 2);
+                when "110" => eximm <= "000000000000" & exsrc(3 downto 0);
 				when others => eximm <= "ZZZZZZZZZZZZZZZZ";
 			end case;
 		elsif exsignop = '1' then
