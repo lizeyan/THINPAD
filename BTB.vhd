@@ -26,9 +26,13 @@ entity BTB is
     Port ( clk : in STD_LOGIC;
            PDTPC : out STD_LOGIC_VECTOR(15 downto 0);
            
+           BTBOp : in STD_LOGIC;  -- whether this is a branch instruction
+           BTBTOp : in STD_LOGIC;  -- this branch instruction really did jump...
+           IF_RF_OPC : in STD_LOGIC_VECTOR(15 downto 0);  -- pc of branch instruction
+           
            IDPC : in STD_LOGIC_VECTOR(15 downto 0);
-           IF_Res : in STD_LOGIC_VECTOR(15 downto 0);
-           IF_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
+--           IF_Res : in STD_LOGIC_VECTOR(15 downto 0);
+--           IF_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
            IF_RF_PC : in STD_LOGIC_VECTOR(15 downto 0);
            PC_RF_PC : in STD_LOGIC_VECTOR(15 downto 0));
 end BTB;
@@ -36,7 +40,49 @@ end BTB;
 architecture Behavioral of BTB is
     type btbr_type is array(255 downto 0) of STD_LOGIC_VECTOR(25 downto 0);  -- 8 HPC + 2 buf + 16 Target
     signal BTBTable : btbr_type;
+    
+    signal status : STD_LOGIC_VECTOR(1 downto 0) := "00";  -- wait until "11" to do the updating
 begin
-
-
+    process(clk, BTBOp, IF_RF_OPC)
+    begin
+        case status is
+            when "00" => 
+                status <= "01";
+            when "01" => 
+                status <= "10";
+            when "10" => 
+                status <= "11";
+            when "11" => 
+                status <= "00";
+                if BTBOp='1' then  -- is a branch instruction
+                    if BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(25 downto 18)=IF_RF_OPC(15 downto 8) then  -- hit buffer
+                        if BTBTOp='1' then
+                            if BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(17 downto 16)="00" then
+                                BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(17 downto 16) <= "01";
+                            elsif BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(17 downto 16)="01" or BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(17 downto 16)="10" then
+                                BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(17 downto 16) <= "11";
+                            end if;
+                        elsif BTBTOp='0' then
+                            if BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(17 downto 16)="11" then
+                                BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(17 downto 16) <= "10";
+                            elsif BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(17 downto 16)="10" or BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(17 downto 16)="01" then
+                                BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(17 downto 16) <= "00";
+                            end if;
+                        end if;
+                    end if;
+                    BTBTable(CONV_INTEGER(IF_RF_OPC(7 downto 0)))(15 downto 0) <= IDPC;
+                end if;
+            when others => 
+                null;
+        end case;
+    end process;
+    
+    process(PC_RF_PC, IF_RF_PC)
+    begin
+        if BTBTable(CONV_INTEGER(PC_RF_PC(7 downto 0)))(25 downto 18)=PC_RF_PC(15 downto 8) and BTBTable(CONV_INTEGER(PC_RF_PC(7 downto 0)))(17)='1' then
+            PDTPC <= BTBTable(CONV_INTEGER(PC_RF_PC(7 downto 0)))(15 downto 0);
+        else
+            PDTPC <= IF_RF_PC;
+        end if;
+    end process;        
 end Behavioral;
