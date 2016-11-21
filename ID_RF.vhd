@@ -50,9 +50,47 @@ entity ID_RF is
 end ID_RF;
 
 architecture Behavioral of ID_RF is
-
+    signal rd : std_logic_vector(3 downto 0);
+    signal imm, ih, pc, res, rx, ry, sp, st, t : std_logic_vector(15 downto 0);
 begin
-   
+    RF_Imm_Out <= imm;
+    RF_IH_Out <= ih;
+    RF_PC_Out <= pc;
+    RF_Res_Out <= res;
+    RF_Rd_Out <= rd;
+    RF_Rx_Out <= rx;
+    RF_Ry_Out <= ry;
+    RF_SP_Out <= sp;
+    RF_St_out <= st;
+    RF_T_Out <= t;
+    process(clk)
+    begin
+        if(ID_RFOp="11") then -- nop
+            imm <= "0000000000000000";
+			res <= "0000000000000000";
+            rd <= "1111";
+            rx <= "0000000000000000";
+			ry <= "0000000000000000";
+			st <= "0000100000000000";
+            
+            ih <= RF_IH_IN;
+            pc <= RF_PC_IN;
+            sp <= RF_SP_IN;
+            t <= RF_T_IN;
+        elsif(ID_RFOp(1)='0') then
+            imm <= RF_Imm_IN;
+			res <= RF_Res_IN;
+            rd <= RF_Rd_IN;
+            rx <= RF_RX_IN;
+			ry <= RF_RY_IN;
+			st <= RF_ST_IN;
+            
+            ih <= RF_IH_IN;
+            pc <= RF_PC_IN;
+            sp <= RF_SP_IN;
+            t <= RF_T_IN;
+        end if;
+    end process;
 
 end Behavioral;
 

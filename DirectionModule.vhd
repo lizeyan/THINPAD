@@ -50,13 +50,13 @@ begin
 			when "011" =>
 				id_rd <= '0' & if_rf_rz;
 			when "010" =>
-				id_rd <= "1001";
+				id_rd <= "1001"; --sp
 			when "110" =>
-				id_rd <= "1000";
+				id_rd <= "1000"; --IH
 			when "100" =>
-				id_rd <= "1010";
+				id_rd <= "1010"; --T
 			when others =>
-				id_rd <= "1111";
+				id_rd <= "1111"; -- illegal
 		end case;
 	end process;
 
