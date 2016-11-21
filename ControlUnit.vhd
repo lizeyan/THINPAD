@@ -32,6 +32,7 @@ entity ControlUnit is
            IDPCOp : out STD_LOGIC_VECTOR(1 downto 0);
            RamEn: out STD_LOGIC_VECTOR(1 downto 0);
            RamRWOp : out STD_LOGIC_VECTOR(1 downto 0);
+			  MEM_SW_SRCop: out STD_LOGIC; --MEM段访存写入的是rx还是ry，在ID段根据指令决定。
            RegWrbOp : out STD_LOGIC_VECTOR(1 downto 0);
            RXTOp : out STD_LOGIC_VECTOR(1 downto 0);
            

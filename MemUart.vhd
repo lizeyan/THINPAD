@@ -23,14 +23,18 @@ use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
 
 entity MemUart is
-    Port ( clk : in STD_LOGIC;
-           rst : in STD_LOGIC;
+    Port ( clk : in STD_LOGIC; --这里需要高速时钟
+           rst : in STD_LOGIC; -- 刷新状态机 rst='0'重置State为00
            
            -- IF
-           PC_RF_PC : in STD_LOGIC_VECTOR(15 downto 0);
-           IF_Ins : out STD_LOGIC_VECTOR(15 downto 0);
+			  -- 根据PC进行取指
+           PC_RF_PC : in STD_LOGIC_VECTOR(15 downto 0); --取指令的地址
+           IF_Ins : out STD_LOGIC_VECTOR(15 downto 0); --指令输出
            
            -- MEM
+			  -- 0写入rx,1写入ry。
+			  -- 地址是exe_rf_res.
+			  MEM_SW_SrcOP: in STD_LOGIC;
            EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
            EXE_RF_Rx : in STD_LOGIC_VECTOR(15 downto 0);
            EXE_RF_Ry : in STD_LOGIC_VECTOR(15 downto 0);
@@ -58,8 +62,20 @@ entity MemUart is
 end MemUart;
 
 architecture Behavioral of MemUart is
-
+	signal state: STD_LOGIC_VECTOR (1 downto 0) := "00";
 begin
+	-- 更新状态机
+	process (clk, rst)
+	begin
+		if rst = '0' then
+			state <= "00";
+		else
+			if clk'event then
+				state <= state + 1;
+			end if;
+		end if;
+	end process;
 
-
+	-- ram2
+	process (clk, rst)   
 end Behavioral;
