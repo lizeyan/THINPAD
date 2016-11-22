@@ -76,6 +76,7 @@ begin
 			end if;
 		end if;
 	end process;
+	
 	--uart
 	process (state)
 	begin
@@ -85,9 +86,6 @@ begin
 					when "00" =>
 						uartwrn <= '1';
 						uartrdn <= '1';
-						ram1en <= '1';
-						ram1we <= '1';
-						ram1oe <= '1';
 					when "01" =>
 						if ramrwop = '0' then
 							uartrdn <= '1';
@@ -120,43 +118,58 @@ begin
 					mem_lw <= "00000000000000" & dataready & (tbre and tsre);
 				end if;
 			end if;
+		else
+			uartwrn <= '1';
+			uartrdn <= '1';
 		end if;
 	end process;
 	
 	--ram1
 	process (state)
 	begin
-		if (not (exe_rf_res(15 downto 2) = "10111111000000")) and exe_rf_res(15) = '1' then --首先保证访问的是ram1
+		if exe_rf_res(15) = '1' and not (exe_rf_res(15 downto 2) = "10111111000000")then
 			case state is
-				when "00" =>
-					uartwrn <= '1';
-					uartrdn <= '1';
-					ram1en <= '0';
-					ram1we <= '1';
-					ram1oe <= '0';
-					addr1 <= exe_rf_res;
-					data1 <= "ZZZZZZZZZZZZZZZZ";
-				when "01" =>
-					if ramrwop = '0' then
-						mem_lw <= data1;
-					end if;
-				when "10" =>
-					uartwrn <= '1';
-					uartrdn <= '1';
-					ram1en <= '0';
-					ram1we <= '1';
-					ram1oe <= '1';
-					addr1 <= exe_rf_res;
-					if mem_sw_srcop = '0' then
-						data1 <= exe_rf_rx;
+				when "00" => --mem段读写准备
+					if ramrwop = '0' then --读
+						ram1en <= '0';
+						ram1we <= '1';
+						ram1oe <= '0';
+						addr1 <= exe_rf_res;
+						data1 <= "ZZZZZZZZZZZZZZZZ";
+					elsif ramrwop = '1' then --写
+						ram1en <= '0';
+						ram1we <= '1';
+						ram1oe <= '1';
 					else
-						data1 <= exe_rf_ry;
+						ram1en <= '1';
+						ram1oe <= '1';
+						ram1we <= '1';
 					end if;
-				when "11" =>
-					ram1we <= '0';
+				when "01" => --mem段读写数据
+						if ramrwop = '0' then --读
+							mem_lw <= data1;
+						elsif ramrwop = '1' then --写
+							if mem_sw_srcop = '1' then
+								data1 <= exe_rf_rx;
+							else
+								data1 <= exe_rf_ry;
+							end if;
+							addr1 <= exe_rf_res;
+							ram1we <= '0';
+						else
+							ram1en <= '1';
+							ram1oe <= '1';
+							ram1we <= '1';
+						end if;
 				when others =>
 					ram1en <= '1';
+					ram1oe <= '1';
+					ram1we <= '1';
 			end case;
+		else
+			ram1en <= '1';
+			ram1oe <= '1';
+			ram1we <= '1';
 		end if;
 	end process;
 
@@ -164,40 +177,62 @@ begin
 	process (state)
 	begin
 		case state is
-			when "00" =>
+			when "00" => --mem段读写准备
+				if exe_rf_res(15) = '0' then --如果访问的是ram2
+					if ramrwop = '0' then --读
+						ram2en <= '0';
+						ram2we <= '1';
+						ram2oe <= '0';
+						addr2 <= exe_rf_res;
+						data2 <= "ZZZZZZZZZZZZZZZZ";
+					elsif ramrwop = '1' then --写
+						ram2en <= '0';
+						ram2we <= '1';
+						ram2oe <= '1';
+					else
+						ram2en <= '1';
+						ram2oe <= '1';
+						ram2we <= '1';
+					end if;
+				else --否则关闭ram2
+					ram2en <= '1';
+					ram2oe <= '1';
+					ram2we <= '1';
+				end if;
+			when "01" => --mem段读写数据
+				if exe_rf_res(15) = '0' then --如果访问的是ram2
+					if ramrwop = '0' then --读
+						mem_lw <= data2;
+					elsif ramrwop = '1' then --写
+						if mem_sw_srcop = '1' then
+							data2 <= exe_rf_rx;
+						else
+							data2 <= exe_rf_ry;
+						end if;
+						addr2 <= exe_rf_res;
+						ram2we <= '0';
+					else
+						ram2en <= '1';
+						ram2oe <= '1';
+						ram2we <= '1';
+					end if;
+				else --否则关闭ram2
+					ram2en <= '1';
+					ram2oe <= '1';
+					ram2we <= '1';
+				end if;
+			when "10" => --if段取值准备
 				ram2en <= '0';
 				ram2we <= '1';
 				ram2oe <= '0';
+				addr2 <= pc_rf_pc;
 				data2 <= "ZZZZZZZZZZZZZZZZ";
-				if if_enop = '1' then
-					addr2 <= pc_rf_pc;
-				else
-					addr2 <= exe_rf_res;
-				end if;
-			when "01" =>
-				if if_enop = '1' then
-					if_ins <= data2;
-				elsif ramrwop = '0' then
-					mem_lw <= data2;
-				end if;
-			when "10" =>
-				if ramrwop = '1' then
-					ram2en <= '0';
-					ram2we <= '1';
-					ram2oe <= '1';
-					addr2 <= exe_rf_res;
-					if mem_sw_srcop = '0' then
-						data2 <= exe_rf_rx;
-					else
-						data2 <= exe_rf_ry;
-					end if;
-				end if;
-			when "11" =>
-				if ramrwop = '1' then
-					ram2we <= '0';
-				end if;
+			when "11" => --取指令
+				if_ins <= data2;
 			when others =>
 				ram2en <= '1';
+				ram2oe <= '1';
+				ram2we <= '1';
 		end case;
 	end process;
 end Behavioral;
