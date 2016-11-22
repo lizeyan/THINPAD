@@ -21,7 +21,7 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
-
+-- 生成IDPC，是这条跳转指令的目标地址
 entity IDPCRXT is
     Port ( RXTOp : in STD_LOGIC_VECTOR(1 downto 0);
            IDPCOp : in STD_LOGIC_VECTOR(1 downto 0);

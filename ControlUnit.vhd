@@ -53,21 +53,24 @@ entity ControlUnit is
            IF_Ins : in STD_LOGIC_VECTOR(15 downto 0);
            IF_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
 			  IF_RF_ST: in STD_LOGIC_VECTOR (15 downto 0); -- IF段寄存器中保存的，指令的内容。因为有的指令需要判断funct字段
+			  IDPC: in STD_LOGIC_VECTOR (15 downto 0); -- IDPCRXT产生的IDPC
            ID_RF_OP : in STD_LOGIC_VECTOR(4 downto 0); 
            ID_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0);
            EXE_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
            EXE_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0)
-           
-           
            );
 end ControlUnit;
 
 architecture Behavioral of ControlUnit is
+	---------------------------------------------------------------------------------------------
     function last_lw_rd (signal x: STD_LOGIC_VECTOR (3 downto 0)) 
-	 return STD_LOGIC is
+		return STD_LOGIC is
 	 begin
 		return ID_RF_RD = x and (ID_RF_OP = "10010" or ID_RF_OP = "10011");
 	 end last_lw_rd;
+	 -----------------------------------------------------------------------------------------------
+	 -- 111非法，表示None
+	 signal PC_SRC_IF, PC_SRC_ID, PC_SRC_EXE, PC_SRC_MEM, PC_SRC_WB: STD_LOGIC_VECTOR (2 downto 0) := "000";
 begin
 	-- 产生MEM_RFOP
 
@@ -77,16 +80,86 @@ begin
 
 	-- 产生IF_RFOP
 
-	-- 产生PC_RFOP
-	process (IF_RF_ST)
-		
-	begin
-	end process;
 
-	--产生PC_RFop, 下一个周期直接使用，不需要保存
-	process (IF_INS, IF_RF_ST)
+	-- 产生RXTOP，然后传给IDPCRXT使用，不保存
+	-- 使用IF段寄存器中的指令字段
+	-- TODO
+	process (if_rf_st)
 	begin
 	end process;
+	-- 产生IDPCOP，然后传给IDPCRXT使用，不保存
+	-- 使用IF段寄存器中的指令字段
+	process (if_rf_st)
+	begin
+		if if_rf_st(15 downto 11) = "00010" then --b
+			idpcop <= "10";
+		elsif if_rf_st(15 downto 11) = "00100" then --beqz
+			idpcop <= "00";
+		elsif if_rf_st(15 downto 11) = "00101" then --bnez
+			idpcop <= "01";
+		elsif if_rf_st(15 downto 8) = "01100000" then --bteqz
+			idpcop <= "00";
+		elsif if_rf_st(15 downto 11) = "11101" and if_rf_st(7 downto 0) = "00000000" then --jr
+			idpcop <= "11";
+		else
+			idpcop <= "ZZ";
+		end if;
+	end process;
+	--------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------
+	-- 产生PC_RFOP
+	-- pc_src_if
+	-- 除了INT应该到异常处理地址，别的都应该到预测地址
+	process (if_ins)
+	begin
+		if if_ins(15 downto 11) = "11111" then --int指令
+			pc_src_if <= "010";
+		else
+			pc_src_if <= "000";
+		end if;
+	end process;
+	-- pc_src_id
+	-- 非跳转指令都是PDT
+	-- 跳转指令比较目标和PC_RF_PC，相同就是PDT，否则就是IDPC
+	process (if_rf_st)
+	begin
+		if idpc = pc_rf_pc then
+			pc_src_id <= "000";
+		else
+			pc_src_id <= "001";
+		end if;
+	end process;
+	-- pc_src_exe
+	pc_src_exe <= "111";
+	-- pc_src_mem
+	pc_src_mem <= "111";
+	-- pc_src_wb
+	pc_src_wb <= "111";
+	--综合
+	process (pc_src_if, pc_src_id, pc_src_exe, pc_src_mem, pc_src_wb)
+	begin
+		if pc_src_wb = "111" then
+			if pc_src_mem = "111" then
+				if pc_src_exe = "111" then
+					if pc_src_id = "111" then
+						pc_rfop <= pc_src_if;
+					else
+						pc_rfop <= pc_src_id;
+					end if;
+				else
+					pc_rfop <= pc_src_exe;
+				end if;
+			else
+				pc_rfop <= pc_src_mem;
+			end if;
+		else
+			pc_rfop <= pc_src_wb;
+		end if;
+	end process;
+	--------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------
+	--------------------------------------------------------------------------------------------
 
 	-- 产生regwrbop, ，之后需要将其保存到ID_RF
 	-- 产生ramrwop，之后需要将其保存到ID_RF
@@ -94,7 +167,7 @@ begin
 	-- 产生目标寄存器选项的控制码，之后需要将其传输到DirectionModule
 	-- 产生ALU操作码，之后需要将其保存到ID_RF
 	-- 使用ID段得到的IF_RD_OP
-	process (IF_RF_OP)
+	process (IF_RF_ST)
 		variable op: STD_LOGIC_VECTOR (4 downto 0);
 		variable dir: STD_LOGIC_VECTOR (2 downto 0); -- 
 	begin
@@ -360,7 +433,7 @@ begin
 	 
 	-- template
 	process
-	variable op: STD_LOGIC_VECTOR (4 downto 0);
+		variable op: STD_LOGIC_VECTOR (4 downto 0);
 	begin
 		op := if_rf_st (15 downto 11);
 		case op is
@@ -403,7 +476,11 @@ begin
 						when "01010" => --cmp
 						when "11101" => --or
 						when "00100" => -- sllv
-						when "00000" => --mfpc
+						when "00000" => 
+							if if_rf_st(7 downto 5) = "0000" then --jr
+							elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+							else
+							end if;
 						when others =>
 					end case;
 				when "11110" => --mfih and mtih

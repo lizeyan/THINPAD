@@ -21,13 +21,14 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
--- 00 PDTPC
--- 01 IDPC
--- 10 NOT WE 不能写
--- 11 IF_RF_PC_ORIGIN
+-- 000 PDTPC
+-- 001 IDPC
+-- 010 异常处理地址
+-- 011 IF_RF_PC_ORIGIN
+-- 100 不能写
 entity PC_RF is
     Port ( clk : in STD_LOGIC;
-           PC_RFOp : in STD_LOGIC_VECTOR(1 downto 0);  -- 00 for PDTPC, 01 for IDPC, 10 for WE_down, 11 for NOP
+           PC_RFOp : in STD_LOGIC_VECTOR(2 downto 0);  -- 00 for PDTPC, 01 for IDPC, 10 for WE_down, 11 for NOP
                       
            IDPC : in STD_LOGIC_VECTOR(15 downto 0);
 			  IF_RD_PC_ORIGIN: in STD_LOGIC_VECTOR (15 downto 0);
