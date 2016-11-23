@@ -77,13 +77,15 @@ architecture Behavioral of ControlUnit is
 	 signal PC_SRC_IF, PC_SRC_ID, PC_SRC_EXE, PC_SRC_MEM, PC_SRC_WB: STD_LOGIC_VECTOR (2 downto 0) := "000";
 begin
 	-- 产生MEM_RFOP
-
-	-- 产生EXE_RFOP
-
-	-- 产生ID_RFOP
-
-	-- 产生IF_RFOP
+	mem_rfop <= "00";
 	
+	-- 产生EXE_RFOP
+	exe_rfop <= "00";
+
+	--下面这俩判断条件差不多，所以我写在一个process里面，太懒，少写一点代码
+	-- 如果性能不足，可以拆开成两个process分别产生
+	-- 产生ID_RFOP
+	-- 产生IF_RFOP
 	process (if_rf_st, pc_rf_pc, idpc, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
 		variable target_failed : boolean := false; --跳转指令发现预测失败
 		variable last_lw_rd, last_last_lw_rd, last_rd : boolean := false; --发现数据冲突
@@ -107,28 +109,32 @@ begin
 			last_lw_rd := (id_rf_rd = x or id_rf_rd = y) and (id_rf_op = "10011" or id_rf_op = "10010");
 			last_last_lw_rd := (exe_rf_op = "10011" or exe_rf_op = "10010") and (exe_rf_rd = x or exe_rf_rd = y);
 		end data_conflict;
-		
-		procedure normal_ins(last_rd, last_lw_rd, last_last_lw_rd, written_st, taregt_failed: in boolean) is
+		procedure normal_ins(last_rd, last_lw_rd, last_last_lw_rd, written_st, target_failed: in boolean) is
 		begin
 				if written_st then
 					if_rfop <= "11";
+					id_rfop <= "11";
 				elsif last_lw_rd then
 					if_rfop <= "10";
+					id_rfop <= "11";
 				else
 					if_rfop <= "00";
+					id_rfop <= "00";
 				end if;
 		end normal_ins;
-		
-		procedure branch_ins(last_rd, last_lw_rd, last_last_lw_rd, written_st, taregt_failed: in boolean) is
+		procedure branch_ins(last_rd, last_lw_rd, last_last_lw_rd, written_st, target_failed: in boolean) is
 		begin
 			if written_st or (target_failed and not (last_rd or last_last_lw_rd)) then
 				if_rfop <= "11";
+				id_rfop <= "11";
 			elsif last_rd or last_last_lw_rd then
 				if_rfop <= "10";
+				id_rfop <= "11";
 			else
 				if_rfop <= "00";
+				id_rfop <= "00";
 			end if;
-		end normal_ins;
+		end branch_ins;
 	begin
 		target_failed := idpc /= pc_rf_pc;
 		---------------------------------------------------------------------------------
@@ -137,39 +143,46 @@ begin
 		case if_rf_st(15 downto 11) is
 			when "01001" => -- addiu
 				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
-				if written_st then
-					if_rfop <= "11";
-				elsif last_lw_rd then
-					if_rfop <= "10";
-				else
-					if_rfop <= "00";
-				end if;
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "01000" => -- addiu3
 				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "01100" => 
 				case if_rf_st (10 downto 8) is
 					when "011" => -- addsp
 						data_conflict (x => "1001", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 					when "000" => --btnez
 						data_conflict (x => "1010", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+						branch_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 					when "100" => --mtsp
 							data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 					when others =>
+						if_rfop <= "00";
 				end case;
 			when "00000" => --addsp3
 				data_conflict (x => "1001", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "00010" => -- b
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "00100" => -- beqz
 				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				branch_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "00101" => -- bnez
 				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				branch_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "01110" => -- cmpi
 				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "01101" => -- li
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "10011" => -- lw
 				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "10010" => -- lw_sp
 				data_conflict (x => "1001", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "00110" => -- sll, sra
 				case if_rf_st(1 downto 0) is
 					when "00" =>
@@ -178,14 +191,19 @@ begin
 						data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 					when others =>
 				end case;
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "01010" => -- slti
 				data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "01111" => --move
 				data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "11011" => -- sw
 				data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "11010" => -- swsp
 				data_conflict (x => '0' & if_rf_st(10 downto 8), y => "1001", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "11100" => 
 				case if_rf_st(1 downto 0) is
 					when "01" => --addu
@@ -194,31 +212,43 @@ begin
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 					when others =>
 				end case;
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 			when "11101" =>
 				case if_rf_st(4 downto 0) is
 					when "01100" => -- add
+						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 					when "01010" => --cmp
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 					when "11101" => --or
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 					when "00100" => -- sllv
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 					when "00000" => 
 						if if_rf_st(7 downto 5) = "0000" then --jr
 							data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+								branch_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+								normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 						else
 						end if;
 					when others =>
 				end case;
 			when "11110" => --mfih and mtih
 				case if_rf_st(0) is
-						when '0' => -- mfih
-						when '1' => -- mtih
-							data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
-						when others =>
-					end case;
+					when '0' => -- mfih
+					when '1' => -- mtih
+						data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when others =>
+				end case;
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
+			when "11111" => --int
+				if_rfop <= "00";
+				id_rfop <= "00";
 			when others =>
+				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 		end case;
 	end process;
 
