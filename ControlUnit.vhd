@@ -45,11 +45,12 @@ entity ControlUnit is
            ID_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
            IF_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
            MEM_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
-           PC_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
+           PC_RFOp : out STD_LOGIC_VECTOR(2 downto 0);
            -- EXE
            IF_EN : out STD_LOGIC; -- put it in pc_rf. !!! NOT COMPLETED
            
 			  -- 在IF段刚刚从内存中取出的新鲜的指令
+			  PC_RF_PC: in STD_LOGIC_VECTOR (15 downto 0);
            IF_Ins : in STD_LOGIC_VECTOR(15 downto 0);
            IF_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
 			  IF_RF_ST: in STD_LOGIC_VECTOR (15 downto 0); -- IF段寄存器中保存的，指令的内容。因为有的指令需要判断funct字段
@@ -57,16 +58,18 @@ entity ControlUnit is
            ID_RF_OP : in STD_LOGIC_VECTOR(4 downto 0); 
            ID_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0);
            EXE_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
-           EXE_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0)
+           EXE_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0);
+           MEM_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
+           MEM_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0)
            );
 end ControlUnit;
 
 architecture Behavioral of ControlUnit is
 	---------------------------------------------------------------------------------------------
     function last_lw_rd (signal x: STD_LOGIC_VECTOR (3 downto 0)) 
-		return STD_LOGIC is
+		return boolean is
 	 begin
-		return ID_RF_RD = x and (ID_RF_OP = "10010" or ID_RF_OP = "10011");
+		return ((ID_RF_RD = x) and (ID_RF_OP = "10010" or ID_RF_OP = "10011"));
 	 end last_lw_rd;
 	 -----------------------------------------------------------------------------------------------
 	 -- 111非法，表示None
@@ -79,13 +82,112 @@ begin
 	-- 产生ID_RFOP
 
 	-- 产生IF_RFOP
-
+	process (if_rf_st)
+	begin
+		case if_rf_st(15 downto 11) is
+            when "01001" => -- addiu
+					if last_lw_rd ('0' & if_rf_st(10 downto 8)) then
+						if_rfop <= "10";
+					else
+						if_rfop <= "00";
+					end if;
+            when "01000" => -- addiu3
+            when "01100" => 
+					case if_rf_st (10 downto 8) is
+						when "011" => -- addsp
+						when "000" => --btnez
+						when "100" => --mtsp
+						when others =>
+					end case;
+            when "00000" => --addsp3
+            when "00010" => -- b
+            when "00100" => -- beqz
+            when "00101" => -- bnez
+            when "01110" => -- cmpi
+            when "01101" => -- li
+            when "10011" => -- lw
+            when "10010" => -- lw_sp
+            when "00110" => -- sll, sra
+					case if_rf_st(1 downto 0) is
+						when "00" =>
+						when "11" =>
+						when others =>
+					end case;
+            when "01010" => -- slti
+				when "01111" => --move
+            when "11011" => -- sw
+            when "11010" => -- swsp
+				when "11100" => 
+					case if_rf_st(1 downto 0) is
+						when "01" => --addu
+						when "11" => --subu
+						when others =>
+					end case;
+				when "11101" =>
+					case if_rf_st(4 downto 0) is
+						when "01100" => -- add
+						when "01010" => --cmp
+						when "11101" => --or
+						when "00100" => -- sllv
+						when "00000" => 
+							if if_rf_st(7 downto 5) = "0000" then --jr
+							elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+							else
+							end if;
+						when others =>
+					end case;
+				when "11110" => --mfih and mtih
+            when others =>
+			end case;
+	end process;
 
 	-- 产生RXTOP，然后传给IDPCRXT使用，不保存
 	-- 使用IF段寄存器中的指令字段
 	-- TODO
 	process (if_rf_st)
+		-- 00 x
+		-- 10 exe_rf_res
+		-- 11 mem_rf_lw
+		-- 01 mem_rf_res
+		function look_ahead_more (signal x: STD_LOGIC_VECTOR(3 downto 0))
+			return STD_LOGIC_VECTOR is
+				variable rxtop: STD_LOGIC_VECTOR (1 downto 0);
+		begin
+			if id_rf_rd = x then --需要等待一回合，所以这里选这里并不关键
+				rxtop := "00";
+			else
+				if exe_rf_rd = x then --如果不是lw指令，那么就正确。如果是的话，这里需要等待一回合，所以并不关键
+					rxtop := "10";
+				else
+					if mem_rf_rd = x then
+						if mem_rf_op = "10011" or mem_rf_op = "10010" then
+							rxtop := "11";
+						else
+							rxtop := "01";
+						end if;
+					else
+						rxtop := "00";
+					end if;
+				end if;
+			end if;
+			return rxtop;
+		end look_ahead_more;
+		
+		variable looked_ahead: STD_LOGIC_VECTOR(1 downto 0) := "00";
 	begin
+		if if_rf_st(15 downto 11) = "00010" then --b
+			rxtop <= "ZZ";
+		elsif if_rf_st(15 downto 11) = "00100" then --beqz
+			looked_ahead := look_ahead_more ('0' & if_rf_st(10 downto 8)); 
+		elsif if_rf_st(15 downto 11) = "00101" then --bnez
+			looked_ahead := look_ahead_more ('0' & if_rf_st(10 downto 8));
+		elsif if_rf_st(15 downto 8) = "01100000" then --bteqz
+			looked_ahead := look_ahead_more ("1010");
+		elsif if_rf_st(15 downto 11) = "11101" and if_rf_st(7 downto 0) = "00000000" then --jr
+			looked_ahead := look_ahead_more ('0' & if_rf_st(10 downto 8));
+		else
+			rxtop <= "ZZ";
+		end if;
 	end process;
 	-- 产生IDPCOP，然后传给IDPCRXT使用，不保存
 	-- 使用IF段寄存器中的指令字段
@@ -176,13 +278,13 @@ begin
             when "01001" => -- addiu
 					aluop <= "0000";
 					dir := "000";
-					regwrbop <= "000";
+					regwrbop <= "00";
 					ramrwop <= '0';
 					swsrc <= '0';
             when "01000" => -- addiu3
 					aluop <= "0000";
 					dir := "001";
-					regwrbop <= "000";
+					regwrbop <= "00";
 					ramrwop <= '0';
 					swsrc <= '0';
             when "01100" => --addsp, bteqz, mtsp
@@ -192,7 +294,7 @@ begin
 						when "011" => -- addsp
 							aluop <= "0000";
 							dir := "010";
-							regwrbop <= "000";
+							regwrbop <= "00";
 						when "000" => --btnez
 							aluop <= "0110";
 							dir := "111";
