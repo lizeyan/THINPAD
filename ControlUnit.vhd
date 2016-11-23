@@ -36,7 +36,7 @@ entity ControlUnit is
            IDPCOp : out STD_LOGIC_VECTOR(1 downto 0); 
            
            RegWrbOp : out STD_LOGIC_VECTOR(1 downto 0); -- 寄存器写回数据的选择 -- 保存到ID_RF
-           RXTOp : out STD_LOGIC_VECTOR(1 downto 0);
+           RXTOp : out STD_LOGIC_VECTOR(2 downto 0);
            SWSrc : out STD_LOGIC; -- 0 rx, 1 ry --保存到ID_RF
            RamRWOp : out STD_LOGIC; -- 0 read, 1 write --保存到ID_RF
            BTBOP : out STD_LOGIC; -- is jumping ins(1) or not(0)
@@ -84,109 +84,57 @@ begin
 	-- 产生IF_RFOP
 	process (if_rf_st)
 	begin
-		case if_rf_st(15 downto 11) is
-            when "01001" => -- addiu
-					if last_lw_rd ('0' & if_rf_st(10 downto 8)) then
-						if_rfop <= "10";
-					else
-						if_rfop <= "00";
-					end if;
-            when "01000" => -- addiu3
-            when "01100" => 
-					case if_rf_st (10 downto 8) is
-						when "011" => -- addsp
-						when "000" => --btnez
-						when "100" => --mtsp
-						when others =>
-					end case;
-            when "00000" => --addsp3
-            when "00010" => -- b
-            when "00100" => -- beqz
-            when "00101" => -- bnez
-            when "01110" => -- cmpi
-            when "01101" => -- li
-            when "10011" => -- lw
-            when "10010" => -- lw_sp
-            when "00110" => -- sll, sra
-					case if_rf_st(1 downto 0) is
-						when "00" =>
-						when "11" =>
-						when others =>
-					end case;
-            when "01010" => -- slti
-				when "01111" => --move
-            when "11011" => -- sw
-            when "11010" => -- swsp
-				when "11100" => 
-					case if_rf_st(1 downto 0) is
-						when "01" => --addu
-						when "11" => --subu
-						when others =>
-					end case;
-				when "11101" =>
-					case if_rf_st(4 downto 0) is
-						when "01100" => -- add
-						when "01010" => --cmp
-						when "11101" => --or
-						when "00100" => -- sllv
-						when "00000" => 
-							if if_rf_st(7 downto 5) = "0000" then --jr
-							elsif if_rf_st(7 downto 5) = "0100" then --mfpc
-							else
-							end if;
-						when others =>
-					end case;
-				when "11110" => --mfih and mtih
-            when others =>
-			end case;
+		
 	end process;
 
 	-- 产生RXTOP，然后传给IDPCRXT使用，不保存
 	-- 使用IF段寄存器中的指令字段
-	-- TODO
 	process (if_rf_st)
 		-- 00 x
 		-- 10 exe_rf_res
 		-- 11 mem_rf_lw
 		-- 01 mem_rf_res
-		function look_ahead_more (signal x: STD_LOGIC_VECTOR(3 downto 0))
-			return STD_LOGIC_VECTOR is
-				variable rxtop: STD_LOGIC_VECTOR (1 downto 0);
-		begin
-			if id_rf_rd = x then --需要等待一回合，所以这里选这里并不关键
-				rxtop := "00";
+		variable x : STD_LOGIC_VECTOR (3 downto 0) := "1111"; --这条指令需要的寄存器的地址
+	begin
+		-- 确认这条跳转指令需要的寄存器地址
+		if if_rf_st(15 downto 11) = "00010" then --b
+			x := "1111";
+		elsif if_rf_st(15 downto 11) = "00100" then --beqz
+			x := '0' & if_rf_st (10 downto 8);
+		elsif if_rf_st(15 downto 11) = "00101" then --bnez
+			x := '0' & if_rf_st (10 downto 8);
+		elsif if_rf_st(15 downto 8) = "01100000" then --bteqz
+			x := "1010";
+		elsif if_rf_st(15 downto 11) = "11101" and if_rf_st(7 downto 0) = "00000000" then --jr
+			x := '0' & if_rf_st (10 downto 8);
+		else
+			x := "1111";
+		end if;
+		-- 如果有必要取寄存器的值
+		if x /= "1111" then --就查看之前指令的情况并使用数据旁路
+			if id_rf_rd = x then --如果上一条指令地址相同，需要等待一回合，所以这里选这里并不关键
+				rxtop <= "000"; -- useless
 			else
-				if exe_rf_rd = x then --如果不是lw指令，那么就正确。如果是的话，这里需要等待一回合，所以并不关键
-					rxtop := "10";
+				if exe_rf_rd = x then --如果上上条指令不是lw指令，那么就正确。如果是的话，这里需要等待一回合，所以并不关键
+					rxtop <= "010";
 				else
 					if mem_rf_rd = x then
 						if mem_rf_op = "10011" or mem_rf_op = "10010" then
-							rxtop := "11";
+							rxtop <= "011";
 						else
-							rxtop := "01";
+							rxtop <= "100";
 						end if;
 					else
-						rxtop := "00";
+						if x = "1010" then
+							rxtop <= "001";
+						else
+							rxtop <= "000";
+						end if;
 					end if;
 				end if;
 			end if;
-			return rxtop;
-		end look_ahead_more;
-		
-		variable looked_ahead: STD_LOGIC_VECTOR(1 downto 0) := "00";
-	begin
-		if if_rf_st(15 downto 11) = "00010" then --b
-			rxtop <= "ZZ";
-		elsif if_rf_st(15 downto 11) = "00100" then --beqz
-			looked_ahead := look_ahead_more ('0' & if_rf_st(10 downto 8)); 
-		elsif if_rf_st(15 downto 11) = "00101" then --bnez
-			looked_ahead := look_ahead_more ('0' & if_rf_st(10 downto 8));
-		elsif if_rf_st(15 downto 8) = "01100000" then --bteqz
-			looked_ahead := look_ahead_more ("1010");
-		elsif if_rf_st(15 downto 11) = "11101" and if_rf_st(7 downto 0) = "00000000" then --jr
-			looked_ahead := look_ahead_more ('0' & if_rf_st(10 downto 8));
-		else
-			rxtop <= "ZZ";
+		else --如果没必要
+			rxtop <= "111"; --就给出非法控制信号
 		end if;
 	end process;
 	-- 产生IDPCOP，然后传给IDPCRXT使用，不保存
