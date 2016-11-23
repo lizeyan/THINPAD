@@ -214,7 +214,7 @@ architecture Behavioral of NaiveCPU is
     component IDPCRXT
         Port ( IDPC : out STD_LOGIC_VECTOR(15 downto 0);
                IDPCOp : in STD_LOGIC_VECTOR(1 downto 0); --是否是分支指令。
-               RXTOp : in STD_LOGIC_VECTOR(1 downto 0);
+               RXTOp : in STD_LOGIC_VECTOR(2 downto 0);
                
                ID_Res : in STD_LOGIC_VECTOR(15 downto 0);
                ID_Rx : in STD_LOGIC_VECTOR(15 downto 0);
@@ -421,7 +421,7 @@ architecture Behavioral of NaiveCPU is
     signal ExSignOp : STD_LOGIC;
     signal IDPCOp : STD_LOGIC_VECTOR(1 downto 0);
     signal RegWrbOp : STD_LOGIC_VECTOR(1 downto 0);
-    signal RXTOp : STD_LOGIC_VECTOR(1 downto 0);
+    signal RXTOp : STD_LOGIC_VECTOR(2 downto 0);
         --add
     signal PC_SrcOP : STD_LOGIC_VECTOR(1 DOWNTO 0);
     signal BTBOP : STD_LOGIC;

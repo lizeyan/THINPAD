@@ -21,24 +21,45 @@ library IEEE;
 use IEEE.std_logic_1164.all;
 use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
+
 -- 000 PDTPC
 -- 001 IDPC
 -- 010 异常处理地址
 -- 011 IF_RF_PC_ORIGIN
 -- 100 不能写
 entity PC_RF is
-    Port ( clk : in STD_LOGIC;
-           PC_RFOp : in STD_LOGIC_VECTOR(2 downto 0);  -- 00 for PDTPC, 01 for IDPC, 10 for WE_down, 11 for NOP
+    Port ( clk : in std_logic;
+           PC_RFOp : in std_logic_vector(2 downto 0);
                       
-           IDPC : in STD_LOGIC_VECTOR(15 downto 0);
-			  IF_RD_PC_ORIGIN: in STD_LOGIC_VECTOR (15 downto 0);
-           PDTPC : in STD_LOGIC_VECTOR(15 downto 0);
-           RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0));
+           IDPC : in std_logic_vector(15 downto 0);
+           IF_RD_PC_ORIGIN: in std_logic_vector (15 downto 0);
+           PDTPC : in std_logic_vector(15 downto 0);
+           
+           RF_PC_Out : out std_logic_vector(15 downto 0));
 end PC_RF;
 
 architecture Behavioral of PC_RF is
-
+    constant DelInt : std_logic_vector(15 downto 0) := (others => '1');  -- Address of DelInt
+    
+    signal pc : std_logic_vector(15 downto 0) := (others => '0');
 begin
+    RF_PC_Out <= pc;
 
-
+    process(clk)
+    begin
+        if clk'event and clk='1' then
+            case PF_RFOp is
+                when "000" => 
+                    pc <= PDTPC;
+                when "001" => 
+                    pc <= IDPC;
+                when "010" => 
+                    pc <= DelInt;
+                when "011" => 
+                    pc <= IF_RF_PC_ORIGIN;
+                when others => 
+                    null;
+            end case;
+        end if;
+    end process;
 end Behavioral;
