@@ -59,6 +59,7 @@ entity ControlUnit is
            ID_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0);
            EXE_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
            EXE_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0);
+			  EXE_Fout : in STD_LOGIC_VECTOR (15 downto 0); -- ALU的即时输出
            MEM_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
            MEM_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0)
            );
@@ -82,9 +83,143 @@ begin
 	-- 产生ID_RFOP
 
 	-- 产生IF_RFOP
-	process (if_rf_st)
-	begin
+	
+	process (if_rf_st, pc_rf_pc, idpc, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
+		variable target_failed : boolean := false; --跳转指令发现预测失败
+		variable last_lw_rd, last_last_lw_rd, last_rd : boolean := false; --发现数据冲突
+		variable written_st: boolean := false; --发现之后有sw指令在写入该指令的地址
+		--------------------------------------------------------------------------------------------------
+		procedure data_conflict (x: in std_logic_vector(3 downto 0);
+--														signal id_rf_rd, exe_rf_rd: in std_logic_vector (3 downto 0);
+--														signal id_rf_op, exe_rf_op: in std_logic_vector (4 downto 0);
+													  last_rd, last_lw_rd, last_last_lw_rd: out boolean) is
+		begin
+			last_rd := id_rf_rd = x;
+			last_lw_rd := (id_rf_rd = x) and (id_rf_op = "10011" or id_rf_op = "10010");
+			last_last_lw_rd := (exe_rf_op = "10011" or exe_rf_op = "10010") and exe_rf_rd = x;
+		end data_conflict;
+		procedure data_conflict (x, y: in std_logic_vector(3 downto 0);
+--														signal id_rf_rd, exe_rf_rd: in std_logic_vector (3 downto 0);
+--														signal id_rf_op, exe_rf_op: in std_logic_vector (4 downto 0);
+													  last_rd, last_lw_rd, last_last_lw_rd: out boolean) is
+		begin
+			last_rd := id_rf_rd = x or id_rf_rd = y;
+			last_lw_rd := (id_rf_rd = x or id_rf_rd = y) and (id_rf_op = "10011" or id_rf_op = "10010");
+			last_last_lw_rd := (exe_rf_op = "10011" or exe_rf_op = "10010") and (exe_rf_rd = x or exe_rf_rd = y);
+		end data_conflict;
 		
+		procedure normal_ins(last_rd, last_lw_rd, last_last_lw_rd, written_st, taregt_failed: in boolean) is
+		begin
+				if written_st then
+					if_rfop <= "11";
+				elsif last_lw_rd then
+					if_rfop <= "10";
+				else
+					if_rfop <= "00";
+				end if;
+		end normal_ins;
+		
+		procedure branch_ins(last_rd, last_lw_rd, last_last_lw_rd, written_st, taregt_failed: in boolean) is
+		begin
+			if written_st or (target_failed and not (last_rd or last_last_lw_rd)) then
+				if_rfop <= "11";
+			elsif last_rd or last_last_lw_rd then
+				if_rfop <= "10";
+			else
+				if_rfop <= "00";
+			end if;
+		end normal_ins;
+	begin
+		target_failed := idpc /= pc_rf_pc;
+		---------------------------------------------------------------------------------
+		written_st := (id_rf_op = "11011" or id_rf_op = "11010") and exe_fout = pc_rf_pc;
+		---------------------------------------------------------------------------------
+		case if_rf_st(15 downto 11) is
+			when "01001" => -- addiu
+				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				if written_st then
+					if_rfop <= "11";
+				elsif last_lw_rd then
+					if_rfop <= "10";
+				else
+					if_rfop <= "00";
+				end if;
+			when "01000" => -- addiu3
+				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "01100" => 
+				case if_rf_st (10 downto 8) is
+					when "011" => -- addsp
+						data_conflict (x => "1001", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when "000" => --btnez
+						data_conflict (x => "1010", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when "100" => --mtsp
+							data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when others =>
+				end case;
+			when "00000" => --addsp3
+				data_conflict (x => "1001", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "00010" => -- b
+			when "00100" => -- beqz
+				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "00101" => -- bnez
+				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "01110" => -- cmpi
+				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "01101" => -- li
+			when "10011" => -- lw
+				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "10010" => -- lw_sp
+				data_conflict (x => "1001", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "00110" => -- sll, sra
+				case if_rf_st(1 downto 0) is
+					when "00" =>
+						data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when "11" =>
+						data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when others =>
+				end case;
+			when "01010" => -- slti
+				data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "01111" => --move
+				data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "11011" => -- sw
+				data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "11010" => -- swsp
+				data_conflict (x => '0' & if_rf_st(10 downto 8), y => "1001", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+			when "11100" => 
+				case if_rf_st(1 downto 0) is
+					when "01" => --addu
+						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when "11" => --subu
+						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when others =>
+				end case;
+			when "11101" =>
+				case if_rf_st(4 downto 0) is
+					when "01100" => -- add
+					when "01010" => --cmp
+						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when "11101" => --or
+						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when "00100" => -- sllv
+						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+					when "00000" => 
+						if if_rf_st(7 downto 5) = "0000" then --jr
+							data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+						else
+						end if;
+					when others =>
+				end case;
+			when "11110" => --mfih and mtih
+				case if_rf_st(0) is
+						when '0' => -- mfih
+						when '1' => -- mtih
+							data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+						when others =>
+					end case;
+			when others =>
+		end case;
 	end process;
 
 	-- 产生RXTOP，然后传给IDPCRXT使用，不保存
