@@ -23,27 +23,25 @@ use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
 
 entity BTB is
-    Port ( clk : in STD_LOGIC;
-           PDTPC : out STD_LOGIC_VECTOR(15 downto 0);
+    Port ( clk : in std_logic;
+           PDTPC : out std_logic_vector(15 downto 0);
            
-           BTBOp : in STD_LOGIC;  -- whether this is a branch instruction
-           BTBTOp : in STD_LOGIC;  -- this branch instruction really did jump...
-           IF_RF_OPC : in STD_LOGIC_VECTOR(15 downto 0);  -- pc of branch instruction
+           BTBOp : in std_logic;  -- whether this is a branch instruction
+           BTBTOp : in std_logic;  -- this branch instruction really did jump...
+           IF_RF_OPC : in std_logic_vector(15 downto 0);  -- pc of branch instruction
            
-           IDPC : in STD_LOGIC_VECTOR(15 downto 0);
---           IF_Res : in STD_LOGIC_VECTOR(15 downto 0);
---           IF_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
-           IF_RF_PC : in STD_LOGIC_VECTOR(15 downto 0);
-           PC_RF_PC : in STD_LOGIC_VECTOR(15 downto 0));
+           IDPC : in std_logic_vector(15 downto 0);
+           IF_RF_PC : in std_logic_vector(15 downto 0);
+           PC_RF_PC : in std_logic_vector(15 downto 0));
 end BTB;
 
 architecture Behavioral of BTB is
-    type btbr_type is array(255 downto 0) of STD_LOGIC_VECTOR(25 downto 0);  -- 8 HPC + 2 buf + 16 Target
+    type btbr_type is array(255 downto 0) of std_logic_vector(25 downto 0);  -- 8 HPC + 2 buf + 16 Target
     signal BTBTable : btbr_type;
     
-    signal status : STD_LOGIC_VECTOR(1 downto 0) := "00";  -- wait until "11" to do the updating
+    signal status : std_logic_vector(1 downto 0) := "00";  -- wait until "11" to do the updating
 begin
-    process(clk, BTBOp, IF_RF_OPC)
+    process(clk, BTBOp, BTBTOp, IF_RF_OPC)
     begin
         case status is
             when "00" => 

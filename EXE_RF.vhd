@@ -34,9 +34,8 @@ entity EXE_RF is
            RF_Ry_In : in STD_LOGIC_VECTOR(15 downto 0);
            RF_St_In : in STD_LOGIC_VECTOR(15 downto 0);
            
-           RF_RamEN_IN : in std_logic_vector(1 downto 0);
-           RF_RamRWOp_IN : in std_logic_vector(1 downto 0);
-           RF_RegWrbOp_IN : in std_logic_vector(1 downto 0);
+           RF_RamRWOp_In : in std_logic;
+           RF_RegWrbOp_In : in std_logic_vector(1 downto 0);
            
            RF_Flags_Out : out STD_LOGIC_VECTOR(3 downto 0);
            RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
@@ -46,13 +45,13 @@ entity EXE_RF is
            RF_Ry_Out : out STD_LOGIC_VECTOR(15 downto 0);
            RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0);
            
-           RF_RamEN_OUT : out std_logic_vector(1 downto 0);
-           RF_RamRWOp_OUT : out std_logic_vector(1 downto 0);
-           RF_RegWrbOp_OUT : out std_logic_vector(1 downto 0));
+           RF_RamRWOp_Out : out std_logic;
+           RF_RegWrbOp_Out : out std_logic_vector(1 downto 0));
 end EXE_RF;
 
  architecture Behavioral of EXE_RF is
-    signal ramen, ramrw, regwrb : std_logic_vector(1 downto 0);
+    signal ramrw : std_logic;
+    signal regwrb : std_logic_vector(1 downto 0);
 	signal flags, rd : STD_LOGIC_VECTOR (3 downto 0) := "0000"; --ozsc
 	signal pc, res, rx, ry, st: STD_LOGIC_VECTOR (15 downto 0) := "0000000000000000";
 begin
@@ -64,9 +63,8 @@ begin
 	rf_ry_out <= ry;
 	rf_st_out <= st;
     
-    RF_RamEN_OUT <= ramen;
-    RF_RamRWOp_OUT <= ramrw;
-    RF_RegWrbOp_OUT <= regwrb;
+    RF_RamRWOp_Out <= ramrw;
+    RF_RegWrbOp_Out <= regwrb;
 	
 	process (clk)
 	begin
@@ -80,8 +78,7 @@ begin
 					ry <= rf_ry_in;
 					st <= rf_st_in;
                     
-                    ramen <= "11";
-                    ramrw <= "11";
+                    ramrw <= '1';
                     regwrb <= "11";
 			elsif exe_rfop = "11" then
 					flags <= "0000";
@@ -92,13 +89,11 @@ begin
 					ry <= "0000000000000000";
 					st <= "0000100000000000";
                     
-                    ramen <= RF_RAMEN_IN;
-                    ramrw <= RF_RAMRWOP_IN;
-                    regwrb <= RF_REGWRBOP_IN;
+                    ramrw <= RF_RamRWOp_In;
+                    regwrb <= RF_RegWrbOp_In;
             else
+                null;
 			end if;
 		end if;
 	end process;
-
 end Behavioral;
-
