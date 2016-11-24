@@ -633,6 +633,7 @@ begin
         IF_Ins => IF_RF_Ins,
         IF_RF_OP => IF_RF_Ins(15 downto 11),  -- this is not necessary with if_rf_st
         IF_RF_St => IF_RF_Ins,
+		  IF_RF_OPC => IF_RF_OPC,  
         IDPC => IDPC,
         ID_RF_OP => ID_RF_St(15 downto 11),
         ID_RF_Rd => ID_RF_Rd,

@@ -70,8 +70,10 @@ architecture Behavioral of ControlUnit is
 	---------------------------------------------------------------------------------------------
     impure function last_lw_rd (signal x: STD_LOGIC_VECTOR (3 downto 0)) 
 		return boolean is
+			variable ret : boolean := false;
 	 begin
-		return ((ID_RF_RD = x) and (ID_RF_OP = "10010" or ID_RF_OP = "10011"));
+		ret := ((ID_RF_RD = x) and (ID_RF_OP = "10010" or ID_RF_OP = "10011"));
+		return ret;
 	 end last_lw_rd;
 	 -----------------------------------------------------------------------------------------------
 	 -- 111非法，表示None
@@ -413,7 +415,7 @@ begin
 	-- 如果性能不足，可以拆开成两个process分别产生
 	-- 产生ID_RFOP
 	-- 产生IF_RFOP
-	process (if_rf_st, pc_rf_pc, idpc, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd, exe_res)
+	process (if_rf_st, pc_rf_pc, idpc, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd, exe_res, id_rf_opc)
 		variable target_failed : boolean := false; --跳转指令发现预测失败
 		variable last_lw_rd, last_last_lw_rd, last_rd : boolean := false; --发现数据冲突
 		variable n_written_st, nn_written_st: boolean := false; --发现之后有sw指令在写入该指令的地址
@@ -440,10 +442,10 @@ begin
 		begin
 				if n_written_st then -- conflict with ins in ID
 					if_rfop <= "11";
-                    id_rfop <= "11";
-                elsif nn_written_st then -- conflict with ins in IF
-                    if_rfop <= "11";
-                    id_rfop <= "00";
+					id_rfop <= "11";
+			   elsif nn_written_st then -- conflict with ins in IF
+					  if_rfop <= "11";
+					  id_rfop <= "00";
 				elsif last_lw_rd then
 					if_rfop <= "10";
 					id_rfop <= "11";
@@ -475,7 +477,7 @@ begin
 		target_failed := idpc /= pc_rf_pc;
 		---------------------------------------------------------------------------------
 		nn_written_st := (id_rf_op = "11011" or id_rf_op = "11010") and exe_res = pc_rf_pc;
-        n_written_st := (id_rf_op = "11011" or id_rf_op = "11010") and exe_res = if_rf_opc;
+		n_written_st := (id_rf_op = "11011" or id_rf_op = "11010") and exe_res = if_rf_opc;
 		---------------------------------------------------------------------------------
 		case if_rf_st(15 downto 11) is
 			when "01001" => -- addiu
@@ -552,7 +554,8 @@ begin
 				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 			when "11101" =>
 				case if_rf_st(4 downto 0) is
-					when "01100" => -- add
+					when "01100" => -- and
+						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 					when "01010" => --cmp
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
