@@ -71,7 +71,7 @@ begin
 		if rst = '0' then
 			state <= "00";
 		else
-			if clk'event then
+			if clk'event and (clk='0' or clk='1') then
 				state <= state + 1;
 			end if;
 		end if;

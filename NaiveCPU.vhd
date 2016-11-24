@@ -368,7 +368,7 @@ architecture Behavioral of NaiveCPU is
                PC_RFOp : in std_logic_vector(2 downto 0);  -- 00 for PDTPC, 01 for IDPC, 10 for WE_down, 11 for NOP
                
                IDPC : in std_logic_vector(15 downto 0);
-               IF_RF_OPC : in std_logic_vector(15 downto 0);
+               EXE_RES_PC : in std_logic_vector(15 downto 0);
                PDTPC : in std_logic_vector(15 downto 0);
                
                RF_PC_Out : out std_logic_vector(15 downto 0));
@@ -834,7 +834,7 @@ begin
         PC_RFOp => PC_RFOp,
         
         IDPC => IDPC,
-        IF_RF_OPC => IF_RF_OPC,
+        EXE_RES_PC => ALURes,
         PDTPC => PDTPC,
         
         RF_PC_Out => PC_RF_PC
