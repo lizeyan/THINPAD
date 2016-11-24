@@ -65,7 +65,7 @@ end ControlUnit;
 
 architecture Behavioral of ControlUnit is
 	---------------------------------------------------------------------------------------------
-    function last_lw_rd (signal x: STD_LOGIC_VECTOR (3 downto 0)) 
+    impure function last_lw_rd (signal x: STD_LOGIC_VECTOR (3 downto 0)) 
 		return boolean is
 	 begin
 		return ((ID_RF_RD = x) and (ID_RF_OP = "10010" or ID_RF_OP = "10011"));
@@ -170,7 +170,7 @@ begin
 						look_ahead_ry;
 					when "01010" => --cmp
 						look_ahead_ry;
-					when "11101" => --or
+					when "01101" => --or
 						look_ahead_ry;
 					when "00100" => -- sllv
 						look_ahead_ry;
@@ -324,7 +324,7 @@ begin
 						look_ahead_rx;
 					when "01010" => --cmp
 						look_ahead_rx;
-					when "11101" => --or
+					when "01101" => --or
 						look_ahead_rx;
 					when "00100" => -- sllv
 						look_ahead_rx;
@@ -509,7 +509,7 @@ begin
 					when "01010" => --cmp
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
-					when "11101" => --or
+					when "01101" => --or
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 					when "00100" => -- sllv
@@ -841,7 +841,7 @@ begin
 							aluop <= "0110";
 							dir := "100";
 							regwrbop <= "10";
-						when "11101" => --or
+						when "01101" => --or
 							aluop <= "0010";
 							dir := "000";
 							regwrbop <= "00";
@@ -950,65 +950,65 @@ begin
     end process;
     
 	 
-	-- template
-	process
-		variable op: STD_LOGIC_VECTOR (4 downto 0);
-	begin
-		op := if_rf_st (15 downto 11);
-		case op is
-			when "01001" => -- addiu
-			when "01000" => -- addiu3
-			when "01100" => 
-				case if_rf_st (10 downto 8) is
-					when "011" => -- addsp
-					when "000" => --btnez
-					when "100" => --mtsp
-					when others =>
-				end case;
-			when "00000" => --addsp3
-			when "00010" => -- b
-			when "00100" => -- beqz
-			when "00101" => -- bnez
-			when "01110" => -- cmpi
-			when "01101" => -- li
-			when "10011" => -- lw
-			when "10010" => -- lw_sp
-			when "00110" => 
-				case if_rf_st(1 downto 0) is
-					when "00" => -- sll
-					when "11" => -- sra
-					when others =>
-				end case;
-			when "01010" => -- slti
-			when "01111" => --move
-			when "11011" => -- sw
-			when "11010" => -- swsp
-			when "11100" => 
-				case if_rf_st(1 downto 0) is
-					when "01" => --addu
-					when "11" => --subu
-					when others =>
-				end case;
-			when "11101" =>
-				case if_rf_st(4 downto 0) is
-					when "01100" => -- and
-					when "01010" => --cmp
-					when "11101" => --or
-					when "00100" => -- sllv
-					when "00000" => 
-						if if_rf_st(7 downto 5) = "0000" then --jr
-						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
-						else
-						end if;
-					when others =>
-				end case;
-			when "11110" => --mfih and mtih
-				case if_rf_st(0) is
-					when '0' => -- mfih
-					when '1' => -- mtih
-					when others =>
-				end case;
-			when others =>
-		end case;
-	end process;
+--	-- template
+--	process
+--		variable op: STD_LOGIC_VECTOR (4 downto 0);
+--	begin
+--		op := if_rf_st (15 downto 11);
+--		case op is
+--			when "01001" => -- addiu
+--			when "01000" => -- addiu3
+--			when "01100" => 
+--				case if_rf_st (10 downto 8) is
+--					when "011" => -- addsp
+--					when "000" => --btnez
+--					when "100" => --mtsp
+--					when others =>
+--				end case;
+--			when "00000" => --addsp3
+--			when "00010" => -- b
+--			when "00100" => -- beqz
+--			when "00101" => -- bnez
+--			when "01110" => -- cmpi
+--			when "01101" => -- li
+--			when "10011" => -- lw
+--			when "10010" => -- lw_sp
+--			when "00110" => 
+--				case if_rf_st(1 downto 0) is
+--					when "00" => -- sll
+--					when "11" => -- sra
+--					when others =>
+--				end case;
+--			when "01010" => -- slti
+--			when "01111" => --move
+--			when "11011" => -- sw
+--			when "11010" => -- swsp
+--			when "11100" => 
+--				case if_rf_st(1 downto 0) is
+--					when "01" => --addu
+--					when "11" => --subu
+--					when others =>
+--				end case;
+--			when "11101" =>
+--				case if_rf_st(4 downto 0) is
+--					when "01100" => -- and
+--					when "01010" => --cmp
+--					when "11101" => --or
+--					when "00100" => -- sllv
+--					when "00000" => 
+--						if if_rf_st(7 downto 5) = "0000" then --jr
+--						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+--						else
+--						end if;
+--					when others =>
+--				end case;
+--			when "11110" => --mfih and mtih
+--				case if_rf_st(0) is
+--					when '0' => -- mfih
+--					when '1' => -- mtih
+--					when others =>
+--				end case;
+--			when others =>
+--		end case;
+--	end process;
 end Behavioral;
