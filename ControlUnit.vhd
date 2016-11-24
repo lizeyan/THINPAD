@@ -76,6 +76,18 @@ architecture Behavioral of ControlUnit is
 begin
 	-- AMUX
 	process (if_rf_st, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
+    -- AMuxOp
+    -- 0000 | EXE_RF_Res
+    -- 0001 | ID_RF_PC
+    -- 0010 | ID_RF_Rx
+    -- 0011 | ID_RF_Ry
+    -- 0100 | ID_RF_IH
+    -- 0101 | ID_RF_SP
+    -- 0110 | ID_RF_T
+    -- 0111 | MEM_RF_LW
+    -- 1000 | MEM_RF_Res
+    -- 1001 | all ones
+    -- 1010 | all zeros  
 		procedure look_ahead (x: in std_logic_vector(3 downto 0);
 													side: out boolean;
 													muxop : out std_logic_vector(3 downto 0)) is
@@ -229,6 +241,7 @@ begin
 				amuxop <= "1111";
 		end case;
 	end process;
+    
 	-- ²úÉúMEM_RFOP
 	mem_rfop <= "00";
 	
