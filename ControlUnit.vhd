@@ -51,6 +51,7 @@ entity ControlUnit is
            -- 在IF段刚刚从内存中取出的新鲜的指令
            PC_RF_PC: in STD_LOGIC_VECTOR (15 downto 0);
            IF_Ins : in STD_LOGIC_VECTOR(15 downto 0);
+           
            IF_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
            IF_RF_ST: in STD_LOGIC_VECTOR (15 downto 0); -- IF段寄存器中保存的，指令的内容。因为有的指令需要判断funct字段
            IDPC: in STD_LOGIC_VECTOR (15 downto 0); -- IDPCRXT产生的IDPC
@@ -66,7 +67,7 @@ end ControlUnit;
 
 architecture Behavioral of ControlUnit is
 	---------------------------------------------------------------------------------------------
-    function last_lw_rd (signal x: STD_LOGIC_VECTOR (3 downto 0)) 
+    impure function last_lw_rd (signal x: STD_LOGIC_VECTOR (3 downto 0)) 
 		return boolean is
 	 begin
 		return ((ID_RF_RD = x) and (ID_RF_OP = "10010" or ID_RF_OP = "10011"));
@@ -75,12 +76,303 @@ architecture Behavioral of ControlUnit is
 	 -- 111非法，表示None
 	 signal PC_SRC_IF, PC_SRC_ID, PC_SRC_EXE, PC_SRC_MEM, PC_SRC_WB: STD_LOGIC_VECTOR (2 downto 0) := "000";
 begin
+	--BMUXOP
+	process (if_rf_st, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
+		procedure look_ahead (x: in std_logic_vector(3 downto 0);
+													side: out boolean;
+													muxop : out std_logic_vector(2 downto 0)) is
+		begin
+			if id_rf_rd = x then --反正如果是lw就会等的，所以直接取alu的输出
+				muxop := "000";
+				side := true;
+			else
+				if exe_rf_rd = x then
+					if exe_rf_op = "10011" or exe_rf_op = "10010" then
+						muxop := "011";
+						side := true;
+					else
+						muxop := "100";
+						side := true;
+					end if;
+				else
+					side := false;
+				end if;
+			end if;
+		end look_ahead;
+		procedure look_ahead_ry is
+			variable side: boolean := false;
+			variable sidemuxop : std_logic_vector (2 downto 0) := "000";
+		begin
+			look_ahead (x => '0' & if_rf_st(7 downto 5), side => side, muxop => sidemuxop);
+			if side then
+				bmuxop <= sidemuxop;
+			else
+				bmuxop <= "010";
+			end if;
+		end look_ahead_ry;
+	begin
+		case if_rf_st (15 downto 11) is
+			when "01001" => -- addiu
+				bmuxop <= "001";
+			when "01000" => -- addiu3
+				bmuxop <= "001";
+			when "01100" => 
+				case if_rf_st (10 downto 8) is
+					when "011" => -- addsp
+						bmuxop <= "001";
+					when "000" => --btnez
+						bmuxop <= "111";
+					when "100" => --mtsp
+						look_ahead_ry;
+					when others =>
+				end case;
+			when "00000" => --addsp3
+				bmuxop <= "001";
+			when "00010" => -- b
+				bmuxop <= "111";
+			when "00100" => -- beqz
+				bmuxop <= "111";
+			when "00101" => -- bnez
+				bmuxop <= "111";
+			when "01110" => -- cmpi
+				bmuxop <= "001";
+			when "01101" => -- li
+				bmuxop <= "001";
+			when "10011" => -- lw
+				bmuxop <= "001";
+			when "10010" => -- lw_sp
+				bmuxop <= "001";
+			when "00110" => 
+				case if_rf_st(1 downto 0) is
+					when "00" => -- sll
+						bmuxop <= "001";
+					when "11" => -- sra
+						bmuxop <= "001";
+					when others =>
+				end case;
+			when "01010" => -- slti
+				bmuxop <= "001";	
+			when "01111" => --move
+				look_ahead_ry;
+			when "11011" => -- sw
+				bmuxop <= "001";
+			when "11010" => -- swsp
+				bmuxop <= "001";
+			when "11100" => 
+				case if_rf_st(1 downto 0) is
+					when "01" => --addu
+						look_ahead_ry;
+					when "11" => --subu
+						look_ahead_ry;
+					when others =>
+				end case;
+			when "11101" =>
+				case if_rf_st(4 downto 0) is
+					when "01100" => -- and
+						look_ahead_ry;
+					when "01010" => --cmp
+						look_ahead_ry;
+					when "01101" => --or
+						look_ahead_ry;
+					when "00100" => -- sllv
+						look_ahead_ry;
+					when "00000" => 
+						if if_rf_st(7 downto 5) = "0000" then --jr
+							bmuxop <= "111";
+						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+							bmuxop <= "110";
+						else
+						end if;
+					when others =>
+				end case;
+			when "11110" => --mfih and mtih
+				case if_rf_st(0) is
+					when '0' => -- mfih
+						bmuxop <= "110";
+					when '1' => -- mtih
+						bmuxop <= "110";
+					when others =>
+						bmuxop <= "111";
+				end case;
+			when others =>
+		end case;
+	end process;
+	-- AMUXOP
+	process (if_rf_st, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
+		procedure look_ahead (x: in std_logic_vector(3 downto 0);
+													side: out boolean;
+													muxop : out std_logic_vector(3 downto 0)) is
+		begin
+			if id_rf_rd = x then --反正如果是lw就会等的，所以直接取alu的输出
+				muxop := "0000";
+				side := true;
+			else
+				if exe_rf_rd = x then
+					if exe_rf_op = "10011" or exe_rf_op = "10010" then
+						muxop := "0111";
+						side := true;
+					else
+						muxop := "1000";
+						side := true;
+					end if;
+				else
+					side := false;
+				end if;
+			end if;
+		end look_ahead;
+		procedure look_ahead_rx is
+			variable side: boolean := false;
+			variable sidemuxop : std_logic_vector (3 downto 0) := "0000";
+		begin
+			look_ahead (x => '0' & if_rf_st(10 downto 8), side => side, muxop => sidemuxop);
+			if side then
+				amuxop <= sidemuxop;
+			else
+				amuxop <= "0010";
+			end if;
+		end look_ahead_rx;
+		procedure look_ahead_ry is
+			variable side: boolean := false;
+			variable sidemuxop : std_logic_vector (3 downto 0) := "0000";
+		begin
+			look_ahead (x => '0' & if_rf_st(7 downto 5), side => side, muxop => sidemuxop);
+			if side then
+				amuxop <= sidemuxop;
+			else
+				amuxop <= "0011";
+			end if;
+		end look_ahead_ry;
+		procedure look_ahead_sp is
+			variable side: boolean := false;
+			variable sidemuxop : std_logic_vector (3 downto 0) := "0000";
+		begin
+			look_ahead (x => "1001", side => side, muxop => sidemuxop);
+			if side then
+				amuxop <= sidemuxop;
+			else
+				amuxop <= "0101";
+			end if;
+		end look_ahead_sp;
+		procedure look_ahead_ih is
+			variable side: boolean := false;
+			variable sidemuxop : std_logic_vector (3 downto 0) := "0000";
+		begin
+			look_ahead (x => "1000", side => side, muxop => sidemuxop);
+			if side then
+				amuxop <= sidemuxop;
+			else
+				amuxop <= "0100";
+			end if;
+		end look_ahead_ih;
+	begin
+		case if_rf_st (15 downto 11) is
+			when "01001" => -- addiu
+				look_ahead_rx;
+			when "01000" => -- addiu3
+				look_ahead_rx;
+			when "01100" => 
+				case if_rf_st (10 downto 8) is
+					when "011" => -- addsp
+						look_ahead_sp;
+					when "000" => --btnez
+						amuxop <= "1111";
+					when "100" => --mtsp
+						amuxop <= "1001";
+					when others =>
+				end case;
+			when "00000" => --addsp3
+				look_ahead_sp;
+			when "00010" => -- b
+				amuxop <= "1111";
+			when "00100" => -- beqz
+				amuxop <= "1111";
+			when "00101" => -- bnez
+				amuxop <= "1111";
+			when "01110" => -- cmpi
+				look_ahead_rx;
+			when "01101" => -- li
+				amuxop <= "1001";
+			when "10011" => -- lw
+				look_ahead_rx;
+			when "10010" => -- lw_sp
+				look_ahead_sp;
+			when "00110" => 
+				case if_rf_st(1 downto 0) is
+					when "00" => -- sll
+						look_ahead_ry;
+					when "11" => --sra
+						look_ahead_ry;
+					when others =>
+				end case;
+			when "01010" => -- slti
+				look_ahead_rx;
+			when "01111" => --move
+				amuxop <= "1001";
+			when "11011" => -- sw
+				look_ahead_rx;
+			when "11010" => -- swsp
+				look_ahead_sp;
+			when "11100" => 
+				case if_rf_st(1 downto 0) is
+					when "01" => --addu
+						look_ahead_rx;
+					when "11" => --subu
+						look_ahead_rx;
+					when others =>
+				end case;
+			when "11101" =>
+				case if_rf_st(4 downto 0) is
+					when "01100" => -- and
+						look_ahead_rx;
+					when "01010" => --cmp
+						look_ahead_rx;
+					when "01101" => --or
+						look_ahead_rx;
+					when "00100" => -- sllv
+						look_ahead_rx;
+					when "00000" => 
+						if if_rf_st(7 downto 5) = "0000" then --jr
+							amuxop <= "1111";
+						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+							amuxop <= "0001";
+						else
+						end if;
+					when others =>
+				end case;
+			when "11110" => --mfih and mtih
+				case if_rf_st(0) is
+					when '0' => -- mfih
+						look_ahead_ih;
+					when '1' => -- mtih
+						look_ahead_rx;
+					when others =>
+						amuxop <= "1111";
+				end case;
+			when others =>
+				amuxop <= "1111";
+		end case;
+	end process;
 	-- 产生MEM_RFOP
 	mem_rfop <= "00";
 	
 	-- 产生EXE_RFOP
 	exe_rfop <= "00";
 
+    -- generate btbop signal
+    process(if_rf_st)
+        variable op : std_logic_vector(4 downto 0) := if_rf_st(15 downto 11);
+    begin
+        if(op="00010" or op="00100" or op="00101") then -- b, beqz, bnez
+            btbop <= '1';
+        elsif(if_rf_st(15 downto 8)="01100000") then -- bteqz
+            btbop <= '1';
+        elsif(op="11101" and if_rf_st="00000") then -- jr
+            btbop <= '1';
+        else
+            btbop <= '0';
+        end if;
+    end process;
+    
 	--下面这俩判断条件差不多，所以我写在一个process里面，太懒，少写一点代码
 	-- 如果性能不足，可以拆开成两个process分别产生
 	-- 产生ID_RFOP
@@ -219,7 +511,7 @@ begin
 					when "01010" => --cmp
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
-					when "11101" => --or
+					when "01101" => --or
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 					when "00100" => -- sllv
@@ -301,6 +593,7 @@ begin
 			rxtop <= "111"; --就给出非法控制信号
 		end if;
 	end process;
+    
 	-- 产生IDPCOP，然后传给IDPCRXT使用，不保存
 	-- 使用IF段寄存器中的指令字段
 	process (if_rf_st)
@@ -333,6 +626,8 @@ begin
 			pc_src_if <= "000";
 		end if;
 	end process;
+    
+    
 	-- pc_src_id
 	-- 非跳转指令都是PDT
 	-- 跳转指令比较目标和PC_RF_PC，相同就是PDT，否则就是IDPC
@@ -351,6 +646,11 @@ begin
 	-- pc_src_wb
 	pc_src_wb <= "111";
 	--综合
+    -- 000 PDTPC
+    -- 001 IDPC
+    -- 010 异常处理地址
+    -- 011 IF_RF_PC_ORIGIN
+    -- 100 不能写
 	process (pc_src_if, pc_src_id, pc_src_exe, pc_src_mem, pc_src_wb)
 	begin
 		if pc_src_wb = "111" then
@@ -379,6 +679,13 @@ begin
 	-- 产生ramrwop，之后需要将其保存到ID_RF
 	-- 产生mem_sw_srcop，之后需要将其保存到ID_RF
 	-- 产生目标寄存器选项的控制码，之后需要将其传输到DirectionModule
+    --- 000 rx
+    --- 001 ry
+    --- 011 rz
+    --- 010 SP
+    --- 110 IH
+    --- 100 T
+    --- others 1111 ILLEGAL
 	-- 产生ALU操作码，之后需要将其保存到ID_RF
 	-- 使用ID段得到的IF_RD_OP
 	process (IF_RF_ST)
@@ -536,7 +843,7 @@ begin
 							aluop <= "0110";
 							dir := "100";
 							regwrbop <= "10";
-						when "11101" => --or
+						when "01101" => --or
 							aluop <= "0010";
 							dir := "000";
 							regwrbop <= "00";
@@ -645,60 +952,65 @@ begin
     end process;
     
 	 
-	-- template
-	process
-		variable op: STD_LOGIC_VECTOR (4 downto 0);
-	begin
-		op := if_rf_st (15 downto 11);
-		case op is
-            when "01001" => -- addiu
-            when "01000" => -- addiu3
-            when "01100" => 
-					case if_rf_st (10 downto 8) is
-						when "011" => -- addsp
-						when "000" => --btnez
-						when "100" => --mtsp
-						when others =>
-					end case;
-            when "00000" => --addsp3
-            when "00010" => -- b
-            when "00100" => -- beqz
-            when "00101" => -- bnez
-            when "01110" => -- cmpi
-            when "01101" => -- li
-            when "10011" => -- lw
-            when "10010" => -- lw_sp
-            when "00110" => -- sll, sra
-					case if_rf_st(1 downto 0) is
-						when "00" =>
-						when "11" =>
-						when others =>
-					end case;
-            when "01010" => -- slti
-				when "01111" => --move
-            when "11011" => -- sw
-            when "11010" => -- swsp
-				when "11100" => 
-					case if_rf_st(1 downto 0) is
-						when "01" => --addu
-						when "11" => --subu
-						when others =>
-					end case;
-				when "11101" =>
-					case if_rf_st(4 downto 0) is
-						when "01100" => -- add
-						when "01010" => --cmp
-						when "11101" => --or
-						when "00100" => -- sllv
-						when "00000" => 
-							if if_rf_st(7 downto 5) = "0000" then --jr
-							elsif if_rf_st(7 downto 5) = "0100" then --mfpc
-							else
-							end if;
-						when others =>
-					end case;
-				when "11110" => --mfih and mtih
-            when others =>
-			end case;
-	end process;
+--	-- template
+--	process
+--		variable op: STD_LOGIC_VECTOR (4 downto 0);
+--	begin
+--		op := if_rf_st (15 downto 11);
+--		case op is
+--			when "01001" => -- addiu
+--			when "01000" => -- addiu3
+--			when "01100" => 
+--				case if_rf_st (10 downto 8) is
+--					when "011" => -- addsp
+--					when "000" => --btnez
+--					when "100" => --mtsp
+--					when others =>
+--				end case;
+--			when "00000" => --addsp3
+--			when "00010" => -- b
+--			when "00100" => -- beqz
+--			when "00101" => -- bnez
+--			when "01110" => -- cmpi
+--			when "01101" => -- li
+--			when "10011" => -- lw
+--			when "10010" => -- lw_sp
+--			when "00110" => 
+--				case if_rf_st(1 downto 0) is
+--					when "00" => -- sll
+--					when "11" => -- sra
+--					when others =>
+--				end case;
+--			when "01010" => -- slti
+--			when "01111" => --move
+--			when "11011" => -- sw
+--			when "11010" => -- swsp
+--			when "11100" => 
+--				case if_rf_st(1 downto 0) is
+--					when "01" => --addu
+--					when "11" => --subu
+--					when others =>
+--				end case;
+--			when "11101" =>
+--				case if_rf_st(4 downto 0) is
+--					when "01100" => -- and
+--					when "01010" => --cmp
+--					when "11101" => --or
+--					when "00100" => -- sllv
+--					when "00000" => 
+--						if if_rf_st(7 downto 5) = "0000" then --jr
+--						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+--						else
+--						end if;
+--					when others =>
+--				end case;
+--			when "11110" => --mfih and mtih
+--				case if_rf_st(0) is
+--					when '0' => -- mfih
+--					when '1' => -- mtih
+--					when others =>
+--				end case;
+--			when others =>
+--		end case;
+--	end process;
 end Behavioral;

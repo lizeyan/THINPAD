@@ -28,6 +28,8 @@ use IEEE.std_logic_unsigned.all;
 -- 010 | ID_RF_Ry
 -- 011 | MEM_RF_LW
 -- 100 | MEM_RF_Res
+-- 101 | all ones
+-- 110 | all zeros
 
 entity BMux is
     Port ( BMuxOp : in STD_LOGIC_VECTOR(2 downto 0);
@@ -55,8 +57,12 @@ begin
                 BSrc <= MEM_RF_LW;
             when "100" => 
                 BSrc <= MEM_RF_Res;
+				when "101" =>
+					bsrc <= "1111111111111111";
+				when "110" =>
+					bsrc <= "0000000000000000";
             when others => 
-                BSrc <= (others => '0');
+                BSrc <= (others => 'Z');
         end case;
     end process;
 end Behavioral;
