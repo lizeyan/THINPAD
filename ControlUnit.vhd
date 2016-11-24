@@ -137,6 +137,7 @@ begin
 					when "100" => --mtsp
 						look_ahead_ry;
 					when others =>
+						bmuxop <= "111";
 				end case;
 			when "00000" => --addsp3
 				bmuxop <= "001";
@@ -161,6 +162,7 @@ begin
 					when "11" => -- sra
 						bmuxop <= "001";
 					when others =>
+						bmuxop <= "111";
 				end case;
 			when "01010" => -- slti
 				bmuxop <= "001";	
@@ -177,6 +179,7 @@ begin
 					when "11" => --subu
 						look_ahead_ry;
 					when others =>
+						bmuxop <= "111";
 				end case;
 			when "11101" =>
 				case if_rf_st(4 downto 0) is
@@ -194,8 +197,10 @@ begin
 						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
 							bmuxop <= "110";
 						else
+							bmuxop <= "111";
 						end if;
 					when others =>
+						bmuxop <= "111";
 				end case;
 			when "11110" => --mfih and mtih
 				case if_rf_st(0) is
@@ -207,6 +212,7 @@ begin
 						bmuxop <= "111";
 				end case;
 			when others =>
+				bmuxop <= "111";
 		end case;
 	end process;
 	-- AMUXOP
@@ -304,6 +310,7 @@ begin
 					when "100" => --mtsp
 						amuxop <= "1001";
 					when others =>
+						amuxop <= "1111";
 				end case;
 			when "00000" => --addsp3
 				look_ahead_sp;
@@ -328,6 +335,7 @@ begin
 					when "11" => --sra
 						look_ahead_ry;
 					when others =>
+						amuxop <= "1111";
 				end case;
 			when "01010" => -- slti
 				look_ahead_rx;
@@ -344,6 +352,7 @@ begin
 					when "11" => --subu
 						look_ahead_rx;
 					when others =>
+						amuxop <= "1111";
 				end case;
 			when "11101" =>
 				case if_rf_st(4 downto 0) is
@@ -361,8 +370,10 @@ begin
 						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
 							amuxop <= "0001";
 						else
+							amuxop <= "1111";
 						end if;
 					when others =>
+						amuxop <= "1111";
 				end case;
 			when "11110" => --mfih and mtih
 				case if_rf_st(0) is
@@ -386,8 +397,9 @@ begin
 
     -- generate btbop signal
     process(if_rf_st)
-        variable op : std_logic_vector(4 downto 0) := if_rf_st(15 downto 11);
+        variable op : std_logic_vector(4 downto 0) := "00000";
     begin
+			op := if_rf_st (15 downto 11);
         if(op="00010" or op="00100" or op="00101") then -- b, beqz, bnez
             btbop <= '1';
         elsif(if_rf_st(15 downto 8)="01100000") then -- bteqz
@@ -434,7 +446,7 @@ begin
 --														signal id_rf_op, exe_rf_op: in std_logic_vector (4 downto 0);
 													  last_rd, last_lw_rd, last_last_lw_rd: out boolean) is
 		begin
-			last_rd := id_rf_rd = x or id_rf_rd = y;
+			last_rd := ((id_rf_rd = x) or (id_rf_rd = y));
 			last_lw_rd := (id_rf_rd = x or id_rf_rd = y) and (id_rf_op = "10011" or id_rf_op = "10010");
 			last_last_lw_rd := (exe_rf_op = "10011" or exe_rf_op = "10010") and (exe_rf_rd = x or exe_rf_rd = y);
 		end data_conflict;
@@ -456,9 +468,9 @@ begin
 		end normal_ins;
 		procedure branch_ins(last_rd, last_lw_rd, last_last_lw_rd, nn_written_st, n_written_st, target_failed: in boolean) is
 		begin
-			if n_written_st then
-				if_rfop <= "11";
-				id_rfop <= "11";
+				if n_written_st then
+					if_rfop <= "11";
+					id_rfop <= "11";
             elsif nn_written_st then
 					if_rfop <= "11";
 					id_rfop <= "00";
@@ -479,6 +491,11 @@ begin
 		nn_written_st := (id_rf_op = "11011" or id_rf_op = "11010") and exe_res = pc_rf_pc;
 		n_written_st := (id_rf_op = "11011" or id_rf_op = "11010") and exe_res = if_rf_opc;
 		---------------------------------------------------------------------------------
+		--init
+		last_rd := false;
+		last_lw_rd := false;
+		last_last_lw_rd := false;
+		
 		case if_rf_st(15 downto 11) is
 			when "01001" => -- addiu
 				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
@@ -495,10 +512,11 @@ begin
 						data_conflict (x => "1010", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 						branch_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 					when "100" => --mtsp
-							data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+						data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 					when others =>
 						if_rfop <= "00";
+						id_rfop <= "00";
 				end case;
 			when "00000" => --addsp3
 				data_conflict (x => "1001", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
@@ -529,6 +547,8 @@ begin
 					when "11" =>
 						data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 					when others =>
+						if_rfop <= "00";
+						id_rfop <= "00";
 				end case;
 				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 			when "01010" => -- slti
@@ -550,6 +570,8 @@ begin
 					when "11" => --subu
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 					when others =>
+						if_rfop <= "00";
+						id_rfop <= "00";
 				end case;
 				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 			when "11101" =>

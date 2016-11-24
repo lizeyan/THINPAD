@@ -40,7 +40,7 @@ end ExtendModule;
 architecture Behavioral of ExtendModule is
 begin
 	process (exsrc, exdigitsop, exsignop)
-		variable sign : STD_LOGIC := '0';
+--		variable sign : STD_LOGIC := '0';
 	begin 
 		if exsignop = '0' then
 			case exdigitsop is
@@ -54,21 +54,21 @@ begin
 		elsif exsignop = '1' then
 			case exdigitsop is
 				when "000" => 
-					sign := exsrc(10);
+--					sign := exsrc(10);
 					eximm (10 downto 0) <= exsrc;
-					eximm (15 downto 11) <= (others => sign);
+					eximm (15 downto 11) <= (others => exsrc(10));
 				when "001" => 
-					sign := exsrc(7);
+--					sign := exsrc(7);
 					eximm (7 downto 0) <= exsrc (7 downto 0);
-					eximm (15 downto 8) <= (others => sign);
+					eximm (15 downto 8) <= (others => exsrc(7));
 				when "011" => 
-					sign := exsrc(4);
+--					sign := exsrc(4);
 					eximm (4 downto 0) <= exsrc (4 downto 0);
-					eximm (15 downto 5) <= (others => sign);
+					eximm (15 downto 5) <= (others => exsrc(4));
 				when "010" => 
-					sign := exsrc(4);
+--					sign := exsrc(4);
 					eximm (2 downto 0) <= exsrc (4 downto 2);
-					eximm (15 downto 3) <= (others => sign);
+					eximm (15 downto 3) <= (others => exsrc(4));
 				when others => eximm <= "ZZZZZZZZZZZZZZZZ";
 			end case;
 		else
