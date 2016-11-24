@@ -27,7 +27,6 @@ entity ControlUnit is
            -- IF generate
            ExDigitsOp : out STD_LOGIC_VECTOR(2 downto 0); --传输到ExtendModule
            ExSignOp : out STD_LOGIC;
-           PC_SRCOP : out STD_LOGIC_VECTOR(1 DOWNTO 0); -- --传送到PC寄存器
            -- ID
            AluOp : out STD_LOGIC_VECTOR(3 downto 0); -- 保存到ID_RF
            AMuxOp : out STD_LOGIC_VECTOR(3 downto 0); --
@@ -46,20 +45,19 @@ entity ControlUnit is
            IF_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
            MEM_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
            PC_RFOp : out STD_LOGIC_VECTOR(2 downto 0);
-           -- EXE
-           IF_EN : out STD_LOGIC; -- put it in pc_rf. !!! NOT COMPLETED
            
 			  -- 在IF段刚刚从内存中取出的新鲜的指令
-			  PC_RF_PC: in STD_LOGIC_VECTOR (15 downto 0);
+           PC_RF_PC: in STD_LOGIC_VECTOR (15 downto 0);
            IF_Ins : in STD_LOGIC_VECTOR(15 downto 0);
+           
            IF_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
-			  IF_RF_ST: in STD_LOGIC_VECTOR (15 downto 0); -- IF段寄存器中保存的，指令的内容。因为有的指令需要判断funct字段
-			  IDPC: in STD_LOGIC_VECTOR (15 downto 0); -- IDPCRXT产生的IDPC
+           IF_RF_ST: in STD_LOGIC_VECTOR (15 downto 0); -- IF段寄存器中保存的，指令的内容。因为有的指令需要判断funct字段
+           IDPC: in STD_LOGIC_VECTOR (15 downto 0); -- IDPCRXT产生的IDPC
            ID_RF_OP : in STD_LOGIC_VECTOR(4 downto 0); 
            ID_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0);
            EXE_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
            EXE_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0);
-			  EXE_Fout : in STD_LOGIC_VECTOR (15 downto 0); -- ALU的即时输出
+           EXE_Fout : in STD_LOGIC_VECTOR (15 downto 0); -- ALU的即时输出
            MEM_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
            MEM_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0)
            );
@@ -237,6 +235,21 @@ begin
 	-- 产生EXE_RFOP
 	exe_rfop <= "00";
 
+    -- generate btbop signal
+    process(if_rf_st)
+        variable op = if_rf_st(15 downto 11);
+    begin
+        if(op="00010" or op="00100" or op="00101") -- b, beqz, bnez
+            btbop <= '1';
+        elsif(if_rf_st(15 downto 8)="01100000")  -- bteqz
+            btbop <= '1';
+        elsif(op="11101" and if_rf_st="00000") -- jr
+            btbop <= '1';
+        else
+            btbop <= '0';
+        end if;
+    end process;
+    
 	--下面这俩判断条件差不多，所以我写在一个process里面，太懒，少写一点代码
 	-- 如果性能不足，可以拆开成两个process分别产生
 	-- 产生ID_RFOP
@@ -457,6 +470,7 @@ begin
 			rxtop <= "111"; --就给出非法控制信号
 		end if;
 	end process;
+    
 	-- 产生IDPCOP，然后传给IDPCRXT使用，不保存
 	-- 使用IF段寄存器中的指令字段
 	process (if_rf_st)
@@ -489,6 +503,8 @@ begin
 			pc_src_if <= "000";
 		end if;
 	end process;
+    
+    
 	-- pc_src_id
 	-- 非跳转指令都是PDT
 	-- 跳转指令比较目标和PC_RF_PC，相同就是PDT，否则就是IDPC
@@ -507,6 +523,11 @@ begin
 	-- pc_src_wb
 	pc_src_wb <= "111";
 	--综合
+    -- 000 PDTPC
+    -- 001 IDPC
+    -- 010 异常处理地址
+    -- 011 IF_RF_PC_ORIGIN
+    -- 100 不能写
 	process (pc_src_if, pc_src_id, pc_src_exe, pc_src_mem, pc_src_wb)
 	begin
 		if pc_src_wb = "111" then
@@ -535,6 +556,13 @@ begin
 	-- 产生ramrwop，之后需要将其保存到ID_RF
 	-- 产生mem_sw_srcop，之后需要将其保存到ID_RF
 	-- 产生目标寄存器选项的控制码，之后需要将其传输到DirectionModule
+    --- 000 rx
+    --- 001 ry
+    --- 011 rz
+    --- 010 SP
+    --- 110 IH
+    --- 100 T
+    --- others 1111 ILLEGAL
 	-- 产生ALU操作码，之后需要将其保存到ID_RF
 	-- 使用ID段得到的IF_RD_OP
 	process (IF_RF_ST)

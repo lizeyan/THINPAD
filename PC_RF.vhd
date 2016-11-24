@@ -32,7 +32,7 @@ entity PC_RF is
            PC_RFOp : in std_logic_vector(2 downto 0);
                       
            IDPC : in std_logic_vector(15 downto 0);
-           IF_RD_PC_ORIGIN: in std_logic_vector (15 downto 0);
+           IF_RF_OPC : in std_logic_vector(15 downto 0);
            PDTPC : in std_logic_vector(15 downto 0);
            
            RF_PC_Out : out std_logic_vector(15 downto 0));
@@ -48,7 +48,7 @@ begin
     process(clk)
     begin
         if clk'event and clk='1' then
-            case PF_RFOp is
+            case PC_RFOp is
                 when "000" => 
                     pc <= PDTPC;
                 when "001" => 
@@ -56,7 +56,7 @@ begin
                 when "010" => 
                     pc <= DelInt;
                 when "011" => 
-                    pc <= IF_RF_PC_ORIGIN;
+                    pc <= IF_RF_OPC;
                 when others => 
                     null;
             end case;
