@@ -23,39 +23,47 @@ use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
 
 entity IF_RF is
-    Port ( clk : in STD_LOGIC;
-           IF_RFOp : in STD_LOGIC_VECTOR(1 downto 0);  -- 10 for WE_N, 11 for NOP, 0- for WE
+    Port ( clk : in std_logic;
+           IF_RFOp : in std_logic_vector(1 downto 0);  -- 10 for WE_N, 11 for NOP, 0- for WE
            
-           RF_PC_In : in STD_LOGIC_VECTOR(15 downto 0);
-           RF_Ins_In : in STD_LOGIC_VECTOR(15 downto 0);
            RF_Imm_In : in std_logic_vector(15 downto 0);
+           RF_Ins_In : in std_logic_vector(15 downto 0);
+           RF_PC_In : in std_logic_vector(15 downto 0);
+           RF_OPC_In : in std_logic_vector(15 downto 0);
            
-           RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
-           RF_Ins_Out : out STD_LOGIC_VECTOR(15 downto 0);
-           RF_Imm_Out : out std_logic_vector(15 downto 0));
+           RF_Imm_Out : out std_logic_vector(15 downto 0);
+           RF_Ins_Out : out std_logic_vector(15 downto 0);
+           RF_PC_Out : out std_logic_vector(15 downto 0);
+           RF_OPC_Out : out std_logic_vector(15 downto 0));
 end IF_RF;
 
 architecture Behavioral of IF_RF is
-    signal pc, ins, imm : std_logic_vector(15 downto 0);
+    signal imm : std_logic_vector(15 downto 0);
+    signal ins : std_logic_vector(15 downto 0);
+    signal pc : std_logic_vector(15 downto 0);
+    signal opc : std_logic_vector(15 downto 0);
 begin
-    RF_INS_OUT <= ins;
     RF_Imm_Out <= imm;
-    RF_PC_OUT <= pc;
+    RF_INS_Out <= ins;
+    RF_PC_Out <= pc;
+    RF_OPC_Out <= opc;
     
     process(clk)
     begin
-        if(clk'event and clk='1') then
-            if(IF_RFOp = "11") then
-                ins <= "0000100000000000";
+        if clk'event and clk='1' then
+            if IF_RFOp="11" then
                 imm <= "0000000000000000";
+                ins <= "0000100000000000";
                 pc <= RF_PC_In;
-            elsif(IF_RFOp(1) = '0') then
+                opc <= RF_OPC_In;
+            elsif IF_RFOp(1)='0' then
+                imm <= RF_Imm_In;
                 ins<= RF_Ins_In;
                 pc <= RF_PC_In;
-                imm <= RF_Imm_In;
+                opc <= RF_OPC_In;
             else
+                null;
             end if;
         end if;
-        
     end process;
 end Behavioral;
