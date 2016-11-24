@@ -358,13 +358,13 @@ begin
 
     -- generate btbop signal
     process(if_rf_st)
-        variable op = if_rf_st(15 downto 11);
+        variable op : std_logic_vector(4 downto 0) := if_rf_st(15 downto 11);
     begin
-        if(op="00010" or op="00100" or op="00101") -- b, beqz, bnez
+        if(op="00010" or op="00100" or op="00101") then -- b, beqz, bnez
             btbop <= '1';
-        elsif(if_rf_st(15 downto 8)="01100000")  -- bteqz
+        elsif(if_rf_st(15 downto 8)="01100000") then -- bteqz
             btbop <= '1';
-        elsif(op="11101" and if_rf_st="00000") -- jr
+        elsif(op="11101" and if_rf_st="00000") then -- jr
             btbop <= '1';
         else
             btbop <= '0';
