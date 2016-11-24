@@ -74,6 +74,161 @@ architecture Behavioral of ControlUnit is
 	 -- 111非法，表示None
 	 signal PC_SRC_IF, PC_SRC_ID, PC_SRC_EXE, PC_SRC_MEM, PC_SRC_WB: STD_LOGIC_VECTOR (2 downto 0) := "000";
 begin
+	-- AMUX
+	process (if_rf_st, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
+		procedure look_ahead (x: in std_logic_vector(3 downto 0);
+													side: out boolean;
+													muxop : out std_logic_vector(3 downto 0)) is
+		begin
+			if id_rf_rd = x then --反正如果是lw就会等的，所以直接取alu的输出
+				muxop := "0000";
+				side := true;
+			else
+				if exe_rf_rd = x then
+					if exe_rf_op = "10011" or exe_rf_op = "10010" then
+						muxop := "0111";
+						side := true;
+					else
+						muxop := "1000";
+						side := true;
+					end if;
+				else
+					side := false;
+				end if;
+			end if;
+		end look_ahead;
+		procedure look_ahead_rx is
+			variable side: boolean := false;
+			variable sidemuxop : std_logic_vector (3 downto 0) := "0000";
+		begin
+			look_ahead (x => '0' & if_rf_st(10 downto 8), side => side, muxop => sidemuxop);
+			if side then
+				amuxop <= sidemuxop;
+			else
+				amuxop <= "0010";
+			end if;
+		end look_ahead_rx;
+		procedure look_ahead_ry is
+			variable side: boolean := false;
+			variable sidemuxop : std_logic_vector (3 downto 0) := "0000";
+		begin
+			look_ahead (x => '0' & if_rf_st(7 downto 5), side => side, muxop => sidemuxop);
+			if side then
+				amuxop <= sidemuxop;
+			else
+				amuxop <= "0011";
+			end if;
+		end look_ahead_ry;
+		procedure look_ahead_sp is
+			variable side: boolean := false;
+			variable sidemuxop : std_logic_vector (3 downto 0) := "0000";
+		begin
+			look_ahead (x => "1001", side => side, muxop => sidemuxop);
+			if side then
+				amuxop <= sidemuxop;
+			else
+				amuxop <= "0101";
+			end if;
+		end look_ahead_sp;
+		procedure look_ahead_ih is
+			variable side: boolean := false;
+			variable sidemuxop : std_logic_vector (3 downto 0) := "0000";
+		begin
+			look_ahead (x => "1000", side => side, muxop => sidemuxop);
+			if side then
+				amuxop <= sidemuxop;
+			else
+				amuxop <= "0100";
+			end if;
+		end look_ahead_ih;
+	begin
+		case if_rf_st (15 downto 11) is
+			when "01001" => -- addiu
+				look_ahead_rx;
+			when "01000" => -- addiu3
+				look_ahead_rx;
+			when "01100" => 
+				case if_rf_st (10 downto 8) is
+					when "011" => -- addsp
+						look_ahead_sp;
+					when "000" => --btnez
+						amuxop <= "1111";
+					when "100" => --mtsp
+						amuxop <= "1001";
+					when others =>
+				end case;
+			when "00000" => --addsp3
+				look_ahead_sp;
+			when "00010" => -- b
+				amuxop <= "1111";
+			when "00100" => -- beqz
+				amuxop <= "1111";
+			when "00101" => -- bnez
+				amuxop <= "1111";
+			when "01110" => -- cmpi
+				look_ahead_rx;
+			when "01101" => -- li
+				amuxop <= "1001";
+			when "10011" => -- lw
+				look_ahead_rx;
+			when "10010" => -- lw_sp
+				look_ahead_sp;
+			when "00110" => 
+				case if_rf_st(1 downto 0) is
+					when "00" => -- sll
+						look_ahead_ry;
+					when "11" => --sra
+						look_ahead_ry;
+					when others =>
+				end case;
+			when "01010" => -- slti
+				look_ahead_rx;
+			when "01111" => --move
+				amuxop <= "1001";
+			when "11011" => -- sw
+				look_ahead_rx;
+			when "11010" => -- swsp
+				look_ahead_sp;
+			when "11100" => 
+				case if_rf_st(1 downto 0) is
+					when "01" => --addu
+						look_ahead_rx;
+					when "11" => --subu
+						look_ahead_rx;
+					when others =>
+				end case;
+			when "11101" =>
+				case if_rf_st(4 downto 0) is
+					when "01100" => -- and
+						look_ahead_rx;
+					when "01010" => --cmp
+						look_ahead_rx;
+					when "11101" => --or
+						look_ahead_rx;
+					when "00100" => -- sllv
+						look_ahead_rx;
+					when "00000" => 
+						if if_rf_st(7 downto 5) = "0000" then --jr
+							amuxop <= "1111";
+						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+							amuxop <= "0001";
+						else
+						end if;
+					when others =>
+				end case;
+			when "11110" => --mfih and mtih
+				case if_rf_st(0) is
+					when '0' => -- mfih
+						look_ahead_ih;
+					when '1' => -- mtih
+						look_ahead_rx;
+					when others =>
+						amuxop <= "1111";
+				end case;
+			when others =>
+				amuxop <= "1111";
+		end case;
+	end process;
 	-- 产生MEM_RFOP
 	mem_rfop <= "00";
 	
@@ -680,54 +835,59 @@ begin
 	begin
 		op := if_rf_st (15 downto 11);
 		case op is
-            when "01001" => -- addiu
-            when "01000" => -- addiu3
-            when "01100" => 
-					case if_rf_st (10 downto 8) is
-						when "011" => -- addsp
-						when "000" => --btnez
-						when "100" => --mtsp
-						when others =>
-					end case;
-            when "00000" => --addsp3
-            when "00010" => -- b
-            when "00100" => -- beqz
-            when "00101" => -- bnez
-            when "01110" => -- cmpi
-            when "01101" => -- li
-            when "10011" => -- lw
-            when "10010" => -- lw_sp
-            when "00110" => -- sll, sra
-					case if_rf_st(1 downto 0) is
-						when "00" =>
-						when "11" =>
-						when others =>
-					end case;
-            when "01010" => -- slti
-				when "01111" => --move
-            when "11011" => -- sw
-            when "11010" => -- swsp
-				when "11100" => 
-					case if_rf_st(1 downto 0) is
-						when "01" => --addu
-						when "11" => --subu
-						when others =>
-					end case;
-				when "11101" =>
-					case if_rf_st(4 downto 0) is
-						when "01100" => -- add
-						when "01010" => --cmp
-						when "11101" => --or
-						when "00100" => -- sllv
-						when "00000" => 
-							if if_rf_st(7 downto 5) = "0000" then --jr
-							elsif if_rf_st(7 downto 5) = "0100" then --mfpc
-							else
-							end if;
-						when others =>
-					end case;
-				when "11110" => --mfih and mtih
-            when others =>
-			end case;
+			when "01001" => -- addiu
+			when "01000" => -- addiu3
+			when "01100" => 
+				case if_rf_st (10 downto 8) is
+					when "011" => -- addsp
+					when "000" => --btnez
+					when "100" => --mtsp
+					when others =>
+				end case;
+			when "00000" => --addsp3
+			when "00010" => -- b
+			when "00100" => -- beqz
+			when "00101" => -- bnez
+			when "01110" => -- cmpi
+			when "01101" => -- li
+			when "10011" => -- lw
+			when "10010" => -- lw_sp
+			when "00110" => 
+				case if_rf_st(1 downto 0) is
+					when "00" => -- sll
+					when "11" => -- sra
+					when others =>
+				end case;
+			when "01010" => -- slti
+			when "01111" => --move
+			when "11011" => -- sw
+			when "11010" => -- swsp
+			when "11100" => 
+				case if_rf_st(1 downto 0) is
+					when "01" => --addu
+					when "11" => --subu
+					when others =>
+				end case;
+			when "11101" =>
+				case if_rf_st(4 downto 0) is
+					when "01100" => -- and
+					when "01010" => --cmp
+					when "11101" => --or
+					when "00100" => -- sllv
+					when "00000" => 
+						if if_rf_st(7 downto 5) = "0000" then --jr
+						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+						else
+						end if;
+					when others =>
+				end case;
+			when "11110" => --mfih and mtih
+				case if_rf_st(0) is
+					when '0' => -- mfih
+					when '1' => -- mtih
+					when others =>
+				end case;
+			when others =>
+		end case;
 	end process;
 end Behavioral;

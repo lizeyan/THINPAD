@@ -32,6 +32,8 @@ use IEEE.std_logic_unsigned.all;
 -- 0110 | ID_RF_T
 -- 0111 | MEM_RF_LW
 -- 1000 | MEM_RF_Res
+-- 1001 | all ones
+-- 1010 | all zeros
 
 entity AMux is
     Port ( AMuxOp : in STD_LOGIC_VECTOR(3 downto 0);
@@ -71,8 +73,12 @@ begin
                 ASrc <= MEM_RF_LW;
             when "1000" => 
                 ASrc <= MEM_RF_Res;
+				when "1001" =>
+					ASrc <= "1111111111111111";
+				when "1010" =>
+					ASrc <= "0000000000000000";
             when others => 
-                ASrc <= (others => '0');
+                ASrc <= (others => 'Z');
         end case;
     end process;
 end Behavioral;
