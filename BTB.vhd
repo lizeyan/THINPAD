@@ -37,12 +37,13 @@ end BTB;
 
 architecture Behavioral of BTB is
     type btbr_type is array(255 downto 0) of std_logic_vector(25 downto 0);  -- 8 HPC + 2 buf + 16 Target
-    signal BTBTable : btbr_type;
+    signal BTBTable : btbr_type := (others => (others => '0'));
     
     signal status : std_logic_vector(1 downto 0) := "00";  -- wait until "11" to do the updating
 begin
     process(clk, BTBOp, BTBTOp, IF_RF_OPC)
     begin
+		if rising_edge (clk) then
         case status is
             when "00" => 
                 status <= "01";
@@ -73,6 +74,7 @@ begin
             when others => 
                 null;
         end case;
+		end if;
     end process;
     
     process(PC_RF_PC, IF_RF_PC)

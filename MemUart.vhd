@@ -28,7 +28,6 @@ entity MemUart is
            
            -- IF
            -- 根据PC进行取指
-           IF_ENOP: in STD_LOGIC; --是否取值
            PC_RF_PC : in STD_LOGIC_VECTOR(15 downto 0); --取指令的地址
            IF_Ins : out STD_LOGIC_VECTOR(15 downto 0); --指令输出
            
@@ -64,6 +63,7 @@ end MemUart;
 
 architecture Behavioral of MemUart is
 	signal state: STD_LOGIC_VECTOR (1 downto 0) := "00";
+	signal mem_lw_uart, mem_lw_ram1, mem_lw_ram2 : std_logic_vector (15 downto 0) := "0000000000000000";
 begin
 	-- 更新状态机
 	process (clk, rst)
@@ -71,14 +71,25 @@ begin
 		if rst = '0' then
 			state <= "00";
 		else
-			if clk'event then
+			if  rising_edge (clk) then
 				state <= state + 1;
 			end if;
 		end if;
 	end process;
 	
+	process (mem_lw_uart, mem_lw_ram1, mem_lw_ram2, exe_rf_res)
+	begin
+		if exe_rf_res(15 downto 2) = "10111111000000" then
+			mem_lw <= mem_lw_uart;
+		elsif exe_rf_res(15) = '1' then
+			mem_lw <= mem_lw_ram1;
+		else
+			mem_lw <= mem_lw_ram2;
+		end if;
+	end process;
+		
 	--uart
-	process (state)
+	process (state, exe_rf_res, ramrwop, data1, mem_sw_srcop, exe_rf_rx, exe_rf_ry, dataready)
 	begin
 		if exe_rf_res(15 downto 2) = "10111111000000" then --首先保证访问的是uart
 			if exe_rf_res(0) = '0' then
@@ -86,7 +97,9 @@ begin
 					when "00" =>
 						uartwrn <= '1';
 						uartrdn <= '1';
+						mem_lw_uart <= "ZZZZZZZZZZZZZZZZ";
 					when "01" =>
+						mem_lw_uart <= "ZZZZZZZZZZZZZZZZ";
 						if ramrwop = '0' then
 							uartrdn <= '1';
 							data1 <= "ZZZZZZZZZZZZZZZZ";
@@ -99,6 +112,7 @@ begin
 							uartwrn <= '0';
 						end if;
 					when "10" =>
+						mem_lw_uart <= "ZZZZZZZZZZZZZZZZ";
 						if ramrwop = '0' then
 							uartrdn <= '0';
 						elsif ramrwop = '1' then
@@ -106,8 +120,11 @@ begin
 						end if;
 					when "11" =>
 						if ramrwop = '0' then
-							mem_lw <= data1;
+							mem_lw_uart <= data1;
 						elsif ramrwop = '1' then
+							mem_lw_uart <= "ZZZZZZZZZZZZZZZZ";
+						else
+							mem_lw_uart <= "ZZZZZZZZZZZZZZZZ";
 						end if;
 					when others =>
 						uartwrn <= '1';
@@ -115,7 +132,9 @@ begin
 				end case;
 			elsif exe_rf_res(0) = '1' then
 				if ramrwop = '0' then
-					mem_lw <= "00000000000000" & dataready & (tbre and tsre);
+					mem_lw_uart <= "00000000000000" & dataready & (tbre and tsre);
+				else
+					mem_lw_uart <= "ZZZZZZZZZZZZZZZZ";
 				end if;
 			end if;
 		else
@@ -125,11 +144,12 @@ begin
 	end process;
 	
 	--ram1
-	process (state)
+	process (state, exe_rf_res, ramrwop, data1, mem_sw_srcop, exe_rf_rx, exe_rf_ry)
 	begin
 		if exe_rf_res(15) = '1' and not (exe_rf_res(15 downto 2) = "10111111000000")then
 			case state is
 				when "00" => --mem段读写准备
+					mem_lw_ram1 <= "ZZZZZZZZZZZZZZZZ";
 					if ramrwop = '0' then --读
 						ram1en <= '0';
 						ram1we <= '1';
@@ -147,8 +167,9 @@ begin
 					end if;
 				when "01" => --mem段读写数据
 						if ramrwop = '0' then --读
-							mem_lw <= data1;
+							mem_lw_ram1 <= data1;
 						elsif ramrwop = '1' then --写
+							mem_lw_ram1 <= "ZZZZZZZZZZZZZZZZ";
 							if mem_sw_srcop = '1' then
 								data1 <= exe_rf_rx;
 							else
@@ -157,16 +178,19 @@ begin
 							addr1 <= exe_rf_res;
 							ram1we <= '0';
 						else
+							mem_lw_ram1 <= "ZZZZZZZZZZZZZZZZ";
 							ram1en <= '1';
 							ram1oe <= '1';
 							ram1we <= '1';
 						end if;
 				when others =>
+					mem_lw_ram1 <= "ZZZZZZZZZZZZZZZZ";
 					ram1en <= '1';
 					ram1oe <= '1';
 					ram1we <= '1';
 			end case;
 		else
+			mem_lw_ram1 <= "ZZZZZZZZZZZZZZZZ";
 			ram1en <= '1';
 			ram1oe <= '1';
 			ram1we <= '1';
@@ -174,10 +198,11 @@ begin
 	end process;
 
 	-- ram2
-	process (state)
+	process (state, exe_rf_res, ramrwop, data2, mem_sw_srcop, exe_rf_rx, exe_rf_ry, pc_rf_pc)
 	begin
 		case state is
 			when "00" => --mem段读写准备
+				mem_lw_ram2 <= "ZZZZZZZZZZZZZZZZ";
 				if exe_rf_res(15) = '0' then --如果访问的是ram2
 					if ramrwop = '0' then --读
 						ram2en <= '0';
@@ -202,8 +227,9 @@ begin
 			when "01" => --mem段读写数据
 				if exe_rf_res(15) = '0' then --如果访问的是ram2
 					if ramrwop = '0' then --读
-						mem_lw <= data2;
+						mem_lw_ram2 <= data2;
 					elsif ramrwop = '1' then --写
+						mem_lw_ram2 <= "ZZZZZZZZZZZZZZZZ";
 						if mem_sw_srcop = '1' then
 							data2 <= exe_rf_rx;
 						else
@@ -212,24 +238,30 @@ begin
 						addr2 <= exe_rf_res;
 						ram2we <= '0';
 					else
+						mem_lw_ram2 <= "ZZZZZZZZZZZZZZZZ";
 						ram2en <= '1';
 						ram2oe <= '1';
 						ram2we <= '1';
 					end if;
 				else --否则关闭ram2
+					mem_lw_ram2 <= "ZZZZZZZZZZZZZZZZ";
 					ram2en <= '1';
 					ram2oe <= '1';
 					ram2we <= '1';
 				end if;
 			when "10" => --if段取值准备
+				mem_lw_ram2 <= "ZZZZZZZZZZZZZZZZ";
 				ram2en <= '0';
 				ram2we <= '1';
 				ram2oe <= '0';
 				addr2 <= pc_rf_pc;
 				data2 <= "ZZZZZZZZZZZZZZZZ";
+				if_ins <= "ZZZZZZZZZZZZZZZZ";
 			when "11" => --取指令
+				mem_lw_ram2 <= "ZZZZZZZZZZZZZZZZ";
 				if_ins <= data2;
 			when others =>
+				mem_lw_ram2 <= "ZZZZZZZZZZZZZZZZ";
 				ram2en <= '1';
 				ram2oe <= '1';
 				ram2we <= '1';

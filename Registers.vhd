@@ -44,7 +44,7 @@ architecture Behavioral of Registers is
 --1000    signal IH : STD_LOGIC_VECTOR(15 downto 0); 8 
 --1001    signal SP : STD_LOGIC_VECTOR(15 downto 0); 9
 --1010    signal T : STD_LOGIC_VECTOR(15 downto 0); 10
-    type regs is array(10 downto 0) of std_logic_vector(15 downto 0);
+    type regs is array(15 downto 0) of std_logic_vector(15 downto 0); --16个冗余了，但其实FPGA上产生的寄存器个数会是2的幂
     signal data : regs := (others => (others => '0'));
 begin
     process(data)
@@ -64,8 +64,8 @@ begin
 --read
     process(data, IF_RF_RX, IF_RF_RY, RegWrbAddr, RegWrbData)
     begin
-        ID_Rx <= data(conv_integer(IF_RF_RX));
-        ID_RY <= data(conv_integer(IF_RF_RY));
+        ID_Rx <= data(conv_integer('0' & IF_RF_RX));
+        ID_RY <= data(conv_integer('0' & IF_RF_RY));
         ID_IH <= data(8);
         ID_SP <= data(9);
         ID_T <= data(10);

@@ -95,6 +95,7 @@ begin
 						side := true;
 					end if;
 				else
+					muxop := "111";
 					side := false;
 				end if;
 			end if;
@@ -216,6 +217,7 @@ begin
 						side := true;
 					end if;
 				else
+					muxop := "1111";
 					side := false;
 				end if;
 			end if;
@@ -377,7 +379,7 @@ begin
 	-- 如果性能不足，可以拆开成两个process分别产生
 	-- 产生ID_RFOP
 	-- 产生IF_RFOP
-	process (if_rf_st, pc_rf_pc, idpc, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
+	process (if_rf_st, pc_rf_pc, idpc, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd, exe_res)
 		variable target_failed : boolean := false; --跳转指令发现预测失败
 		variable last_lw_rd, last_last_lw_rd, last_rd : boolean := false; --发现数据冲突
 		variable written_st: boolean := false; --发现之后有sw指令在写入该指令的地址
@@ -415,9 +417,12 @@ begin
 		end normal_ins;
 		procedure branch_ins(last_rd, last_lw_rd, last_last_lw_rd, written_st, target_failed: in boolean) is
 		begin
-			if written_st or (target_failed and not (last_rd or last_last_lw_rd)) then
+			if written_st then
 				if_rfop <= "11";
 				id_rfop <= "11";
+			elsif target_failed and (not (last_rd or last_last_lw_rd)) then
+				if_rfop <= "11";
+				id_rfop <= "00";
 			elsif last_rd or last_last_lw_rd then
 				if_rfop <= "10";
 				id_rfop <= "11";
@@ -524,8 +529,12 @@ begin
 						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
 								normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, written_st => written_st, target_failed => target_failed);
 						else
+								if_rfop <= "00";
+								id_rfop <= "00";
 						end if;
 					when others =>
+						if_rfop <= "00";
+						id_rfop <= "00";
 				end case;
 			when "11110" => --mfih and mtih
 				case if_rf_st(0) is
@@ -545,7 +554,7 @@ begin
 
 	-- 产生RXTOP，然后传给IDPCRXT使用，不保存
 	-- 使用IF段寄存器中的指令字段
-	process (if_rf_st)
+	process (if_rf_st, id_rf_rd, exe_rf_rd, mem_rf_rd, mem_rf_op)
 		-- 00 x
 		-- 10 exe_rf_res
 		-- 11 mem_rf_lw
@@ -631,7 +640,7 @@ begin
 	-- pc_src_id
 	-- 非跳转指令都是PDT
 	-- 跳转指令比较目标和PC_RF_PC，相同就是PDT，否则就是IDPC
-	process (if_rf_st)
+	process (if_rf_st, idpc, pc_rf_pc)
 	begin
 		if idpc = pc_rf_pc then
 			pc_src_id <= "000";
@@ -790,6 +799,7 @@ begin
 					when others =>
 						aluop <= "1111";
 						dir := "111";
+						regwrbop <= "11";
 					end case;
             when "01010" => -- slti
 					ramrwop <= '0';
@@ -830,6 +840,7 @@ begin
 						when others =>
 							aluop <= "1111";
 							dir := "111";
+							regwrbop <= "11";
 					end case;
 				when "11101" =>
 					ramrwop <= '0';
@@ -908,6 +919,8 @@ begin
             		ExDigitsOp <= "001";
            			ExSignOp <= '1';
            		else
+						exdigitsop <= "111";
+						exsignop <= '1';
            		end if;
             when "00000" => --addsp3
             	ExDigitsOp <= "001";
