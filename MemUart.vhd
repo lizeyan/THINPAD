@@ -27,23 +27,23 @@ entity MemUart is
            rst : in STD_LOGIC; -- 刷新状态机 rst='0'重置State为00
            
            -- IF
-			  -- 根据PC进行取指
-			  IF_ENOP: in STD_LOGIC; --是否取值
+           -- 根据PC进行取指
+           IF_ENOP: in STD_LOGIC; --是否取值
            PC_RF_PC : in STD_LOGIC_VECTOR(15 downto 0); --取指令的地址
            IF_Ins : out STD_LOGIC_VECTOR(15 downto 0); --指令输出
            
            -- MEM
-			  -- 0写入rx,1写入ry。
-			  -- 地址是exe_rf_res.
-			  MEM_SW_SrcOP: in STD_LOGIC;
+           -- 0写入rx,1写入ry。
+           -- 地址是exe_rf_res.
+           MEM_SW_SrcOp : in STD_LOGIC;
            EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
            EXE_RF_Rx : in STD_LOGIC_VECTOR(15 downto 0);
            EXE_RF_Ry : in STD_LOGIC_VECTOR(15 downto 0);
            MEM_LW : out STD_LOGIC_VECTOR(15 downto 0);
            
            -- IF & MEM
-			  -- 0 read; 1 write
-           RamRWOp : in STD_LOGIC; --内存读写
+           -- 0 read; 1 write
+           RamRWOp : in std_logic; --内存读写
            
            Addr1 : out STD_LOGIC_VECTOR(15 downto 0);
            Addr2 : out STD_LOGIC_VECTOR(15 downto 0);

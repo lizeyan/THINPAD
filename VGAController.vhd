@@ -32,7 +32,17 @@ entity VGAController is
            G : out STD_LOGIC_VECTOR(2 downto 0);
            B : out STD_LOGIC_VECTOR(2 downto 0);
            
-           R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T : in STD_LOGIC_VECTOR(15 downto 0));
+           R0 : in std_logic_vector(15 downto 0);
+           R1 : in std_logic_vector(15 downto 0);
+           R2 : in std_logic_vector(15 downto 0);
+           R3 : in std_logic_vector(15 downto 0);
+           R4 : in std_logic_vector(15 downto 0);
+           R5 : in std_logic_vector(15 downto 0);
+           R6 : in std_logic_vector(15 downto 0);
+           R7 : in std_logic_vector(15 downto 0);
+           IH : in std_logic_vector(15 downto 0);
+           SP : in std_logic_vector(15 downto 0);
+           T : in std_logic_vector(15 downto 0));
 end VGAController;
 
 architecture Behavioral of VGAController is

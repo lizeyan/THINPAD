@@ -24,7 +24,8 @@ use IEEE.std_logic_unsigned.all;
 
 -- 生成IDPC，是这条跳转指令的目标地址
 entity IDPCRXT is
-    Port ( IDPC : out std_logic_vector(15 downto 0);
+    Port ( BTBTOp : out std_logic;
+           IDPC : out std_logic_vector(15 downto 0);
            IDPCOp : in std_logic_vector(1 downto 0); --IDPC的选择，只和指令有关
            RXTOp : in std_logic_vector(2 downto 0); --寄存器取值的数据旁路控制信号
            
@@ -77,21 +78,28 @@ begin
             when "00" =>  -- BEQZ, BTEQZ
                 if EQ='1' then
                     IDPC <= ID_Res;
+                    BTBTOp <= '1';
                 else
                     IDPC <= IF_RF_PC;
+                    BTBTOp <= '0';
                 end if;
             when "01" =>  -- BNEZ
                 if EQ='0' then
                     IDPC <= ID_Res;
+                    BTBTOp <= '1';
                 else
                     IDPC <= IF_RF_PC;
+                    BTBTOp <= '0';
                 end if;
             when "10" =>  -- B
                 IDPC <= ID_Res;
+                BTBTOp <= '1';
             when "11" =>  -- JR
                 IDPC <= RXTRes;
+                BTBTOp <= '1';
             when others =>
                 IDPC <= "ZZZZZZZZZZZZZZZZ";
+                BTBTOp <= '1';
         end case;
     end process;
 end Behavioral;
