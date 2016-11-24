@@ -67,7 +67,7 @@ ARCHITECTURE behavior OF controlunit_test_rfop IS
          ID_RF_Rd : IN  std_logic_vector(3 downto 0);
          EXE_RF_OP : IN  std_logic_vector(4 downto 0);
          EXE_RF_Rd : IN  std_logic_vector(3 downto 0);
-         EXE_Fout : IN  std_logic_vector(15 downto 0);
+         EXE_Res : IN  std_logic_vector(15 downto 0);
          MEM_RF_OP : IN  std_logic_vector(4 downto 0);
          MEM_RF_Rd : IN  std_logic_vector(3 downto 0)
         );
@@ -84,7 +84,7 @@ ARCHITECTURE behavior OF controlunit_test_rfop IS
    signal ID_RF_Rd : std_logic_vector(3 downto 0) := (others => '0');
    signal EXE_RF_OP : std_logic_vector(4 downto 0) := (others => '0');
    signal EXE_RF_Rd : std_logic_vector(3 downto 0) := (others => '0');
-   signal EXE_Fout : std_logic_vector(15 downto 0) := (others => '0');
+   signal EXE_Res : std_logic_vector(15 downto 0) := (others => '0');
    signal MEM_RF_OP : std_logic_vector(4 downto 0) := (others => '0');
    signal MEM_RF_Rd : std_logic_vector(3 downto 0) := (others => '0');
 
@@ -139,7 +139,7 @@ BEGIN
           ID_RF_Rd => ID_RF_Rd,
           EXE_RF_OP => EXE_RF_OP,
           EXE_RF_Rd => EXE_RF_Rd,
-          EXE_Fout => EXE_Fout,
+          EXE_Res => EXE_Res,
           MEM_RF_OP => MEM_RF_OP,
           MEM_RF_Rd => MEM_RF_Rd
         );
@@ -148,48 +148,79 @@ BEGIN
    stim_proc: process
    begin
 		-- 未发生任何问题
-		-- ID_RFOP
-		-- IF_RFOP
-		
+		-- ID_RFOP 00
+		-- IF_RFOP 00
+        wait for 10 ns;
 		-- 仅跳转失败
-		-- ID_RFOP
-		-- IF_RFOP
-		
+		-- ID_RFOP 10
+		-- IF_RFOP 11
+        IF_RF_St <= "0010011100000000";
+        IDPC <= "0000000000000001";
+		wait for 10 ns;
 		-- 普通指令 上一条指令是LW且目标冲突
-		-- ID_RFOP
-		-- IF_RFOP
-		
+		-- ID_RFOP 11
+		-- IF_RFOP 10
+        IDPC <= "0000000000000000";
+        IF_RF_St <= "1110100011101100";  -- AND R0 R7
+        ID_RF_Op <= "10011";
+        ID_RF_Rd <= "0111";
+        wait for 10 ns;
 		-- 普通指令 上一条指令是LW且目标不冲突
-		-- ID_RFOP
-		-- IF_RFOP
-		
+		-- ID_RFOP 00
+		-- IF_RFOP 00
+        ID_RF_Rd <= "1001";
+		wait for 10 ns;
 		-- 跳转指令BEQZ 上一条指令是LW且目标冲突
-		-- ID_RFOP
-		-- IF_RFOP
-		
+		-- ID_RFOP 11
+		-- IF_RFOP 10
+        IF_RF_St <= "0010011100000000";  -- BEQZ R7 0
+		ID_RF_Rd <= "0111";
+        wait for 10 ns;
 		-- 跳转指令BEQZ 上一条指令不是LW且目标冲突
-		-- ID_RFOP
-		-- IF_RFOP
-		
+		-- ID_RFOP 11
+		-- IF_RFOP 10
+        ID_RF_Op <= "11101";
+		wait for 10 ns;
 		-- 跳转指令BEQZ 上一条指令是LW且目标冲突 且跳转失败
-		-- ID_RFOP
-		-- IF_RFOP
-		
+		-- ID_RFOP 11
+		-- IF_RFOP 11
+		ID_RF_Op <= "10011";
+        IDPC <= "0000000000000001";
+        wait for 10 ns;
 		-- 跳转指令BTEQZ 上上条指令不是LW且目标冲突
-		-- ID_RFOP
-		-- IF_RFOP
-		
+		-- ID_RFOP 00
+		-- IF_RFOP 00
+        IDPC <= "0000000000000000";
+		IF_RF_St <= "0110000000000000";
+        EXE_RF_OP <= "11101";
+        EXE_RF_Rd <= "1010";
+        wait for 10 ns;
 		-- 跳转指令JR 上上条指令是LW且目标冲突
-		-- ID_RFOP
-		-- IF_RFOP
-		
+		-- ID_RFOP 11
+		-- IF_RFOP 10
+		IF_RF_St <= "1110111100000000";
+        EXE_RF_OP <= "10011";
+        EXE_RF_Rd <= "0111";
+        wait for 10 ns;
 		-- 跳转指令JR 上上条指令是LW且目标不冲突
-		-- ID_RFOP
-		-- IF_RFOP
-		
-		-- 仅发现重写指令
-		-- ID_RFOP
-		-- IF_RFOP
+		-- ID_RFOP 00
+		-- IF_RFOP 00
+		EXE_RF_Rd <= "0000";
+        wait for 10 ns;
+		-- 仅发现重写指令 IF
+		-- ID_RFOP 11
+		-- IF_RFOP 10
+        ID_RF_OP <= "11011";
+        IF_RF_OPC <= "0000000000000001";
+        EXE_Res <= "0000000000000001";
+        wait for 10 ns;
+        -- 仅发现重写指令 ID
+		-- ID_RFOP 11
+		-- IF_RFOP 11
+        ID_RF_OP <= "10011";
+        EXE_RF_OP <= "11010";
+        PC_RF_PC <= "0000000000000001";
+        wait for 10 ns;
    end process;
 
 END;

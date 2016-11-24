@@ -25,14 +25,14 @@ use IEEE.std_logic_unsigned.all;
 -- 000 PDTPC
 -- 001 IDPC
 -- 010 异常处理地址
--- 011 IF_RF_PC_ORIGIN
+-- 011 EXE_RES_PC
 -- 100 不能写
 entity PC_RF is
     Port ( clk : in std_logic;
            PC_RFOp : in std_logic_vector(2 downto 0);
                       
            IDPC : in std_logic_vector(15 downto 0);
-           IF_RF_OPC : in std_logic_vector(15 downto 0);
+           EXE_RES_PC : in std_logic_vector(15 downto 0);
            PDTPC : in std_logic_vector(15 downto 0);
            
            RF_PC_Out : out std_logic_vector(15 downto 0));
@@ -56,7 +56,7 @@ begin
                 when "010" => 
                     pc <= DelInt;
                 when "011" => 
-                    pc <= IF_RF_OPC;
+                    pc <= EXE_RES_PC;
                 when others => 
                     null;
             end case;
