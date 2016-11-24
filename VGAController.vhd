@@ -55,7 +55,7 @@ architecture Behavioral of VGAController is
     signal y : STD_LOGIC_VECTOR(9 downto 0);
 	constant half : STD_LOGIC_VECTOR(2 downto 0) := "001";
         
-	function print_register(input: STD_LOGIC_VECTOR(15 downto 0))
+	impure function print_register(input: STD_LOGIC_VECTOR(15 downto 0))
 	return STD_LOGIC_VECTOR is
 	variable temp_G : STD_LOGIC_VECTOR (2 downto 0);
 		begin
