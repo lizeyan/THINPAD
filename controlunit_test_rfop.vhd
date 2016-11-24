@@ -62,6 +62,7 @@ ARCHITECTURE behavior OF controlunit_test_rfop IS
          IF_Ins : IN  std_logic_vector(15 downto 0);
          IF_RF_OP : IN  std_logic_vector(4 downto 0);
          IF_RF_ST : IN  std_logic_vector(15 downto 0);
+         IF_RF_OPC : IN std_logic_vector(15 downto 0);
          IDPC : IN  std_logic_vector(15 downto 0);
          ID_RF_OP : IN  std_logic_vector(4 downto 0);
          ID_RF_Rd : IN  std_logic_vector(3 downto 0);
@@ -79,6 +80,7 @@ ARCHITECTURE behavior OF controlunit_test_rfop IS
    signal IF_Ins : std_logic_vector(15 downto 0) := (others => '0');
    signal IF_RF_OP : std_logic_vector(4 downto 0) := (others => '0');
    signal IF_RF_ST : std_logic_vector(15 downto 0) := (others => '0');
+   signal IF_RF_OPC : std_logic_vector(15 downto 0) := (others => '0');
    signal IDPC : std_logic_vector(15 downto 0) := (others => '0');
    signal ID_RF_OP : std_logic_vector(4 downto 0) := (others => '0');
    signal ID_RF_Rd : std_logic_vector(3 downto 0) := (others => '0');
@@ -134,6 +136,7 @@ BEGIN
           IF_Ins => IF_Ins,
           IF_RF_OP => IF_RF_OP,
           IF_RF_ST => IF_RF_ST,
+          IF_RF_OPC => IF_RF_OPC,
           IDPC => IDPC,
           ID_RF_OP => ID_RF_OP,
           ID_RF_Rd => ID_RF_Rd,
