@@ -27,7 +27,7 @@ entity ControlUnit is
            -- IF generate
            ExDigitsOp : out STD_LOGIC_VECTOR(2 downto 0); --传输到ExtendModule
            ExSignOp : out STD_LOGIC;
-           PC_SRCOP : out STD_LOGIC_VECTOR(1 DOWNTO 0); -- --传送到PC寄存器
+           
            -- ID
            AluOp : out STD_LOGIC_VECTOR(3 downto 0); -- 保存到ID_RF
            AMuxOp : out STD_LOGIC_VECTOR(3 downto 0); --
@@ -40,26 +40,25 @@ entity ControlUnit is
            SWSrc : out STD_LOGIC; -- 0 rx, 1 ry --保存到ID_RF
            RamRWOp : out STD_LOGIC; -- 0 read, 1 write --保存到ID_RF
            BTBOP : out STD_LOGIC; -- is jumping ins(1) or not(0)
-                -- ENABLE  complex
+           
+           -- ENABLE  complex
            EXE_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
            ID_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
            IF_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
            MEM_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
            PC_RFOp : out STD_LOGIC_VECTOR(2 downto 0);
-           -- EXE
-           IF_EN : out STD_LOGIC; -- put it in pc_rf. !!! NOT COMPLETED
            
-			  -- 在IF段刚刚从内存中取出的新鲜的指令
-			  PC_RF_PC: in STD_LOGIC_VECTOR (15 downto 0);
+           -- 在IF段刚刚从内存中取出的新鲜的指令
+           PC_RF_PC: in STD_LOGIC_VECTOR (15 downto 0);
            IF_Ins : in STD_LOGIC_VECTOR(15 downto 0);
            IF_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
-			  IF_RF_ST: in STD_LOGIC_VECTOR (15 downto 0); -- IF段寄存器中保存的，指令的内容。因为有的指令需要判断funct字段
-			  IDPC: in STD_LOGIC_VECTOR (15 downto 0); -- IDPCRXT产生的IDPC
+           IF_RF_ST: in STD_LOGIC_VECTOR (15 downto 0); -- IF段寄存器中保存的，指令的内容。因为有的指令需要判断funct字段
+           IDPC: in STD_LOGIC_VECTOR (15 downto 0); -- IDPCRXT产生的IDPC
            ID_RF_OP : in STD_LOGIC_VECTOR(4 downto 0); 
            ID_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0);
            EXE_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
            EXE_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0);
-			  EXE_Fout : in STD_LOGIC_VECTOR (15 downto 0); -- ALU的即时输出
+           EXE_Res : in STD_LOGIC_VECTOR (15 downto 0); -- ALU的即时输出
            MEM_RF_OP : in STD_LOGIC_VECTOR(4 downto 0);
            MEM_RF_Rd : in STD_LOGIC_VECTOR(3 downto 0)
            );
@@ -138,7 +137,7 @@ begin
 	begin
 		target_failed := idpc /= pc_rf_pc;
 		---------------------------------------------------------------------------------
-		written_st := (id_rf_op = "11011" or id_rf_op = "11010") and exe_fout = pc_rf_pc;
+		written_st := (id_rf_op = "11011" or id_rf_op = "11010") and exe_res = pc_rf_pc;
 		---------------------------------------------------------------------------------
 		case if_rf_st(15 downto 11) is
 			when "01001" => -- addiu
