@@ -76,6 +76,14 @@ architecture Behavioral of ControlUnit is
 begin
 	--BMUXOP
 	process (if_rf_st, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
+    -- BMuxOp
+    -- 000 | EXE_RF_Res
+    -- 001 | ID_RF_Imm
+    -- 010 | ID_RF_Ry
+    -- 011 | MEM_RF_LW
+    -- 100 | MEM_RF_Res
+    -- 101 | all ones
+    -- 110 | all zeros
 		procedure look_ahead (x: in std_logic_vector(3 downto 0);
 													side: out boolean;
 													muxop : out std_logic_vector(2 downto 0)) is
