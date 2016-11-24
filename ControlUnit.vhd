@@ -74,7 +74,128 @@ architecture Behavioral of ControlUnit is
 	 -- 111非法，表示None
 	 signal PC_SRC_IF, PC_SRC_ID, PC_SRC_EXE, PC_SRC_MEM, PC_SRC_WB: STD_LOGIC_VECTOR (2 downto 0) := "000";
 begin
-	-- AMUX
+	--BMUXOP
+	process (if_rf_st, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
+		procedure look_ahead (x: in std_logic_vector(3 downto 0);
+													side: out boolean;
+													muxop : out std_logic_vector(2 downto 0)) is
+		begin
+			if id_rf_rd = x then --反正如果是lw就会等的，所以直接取alu的输出
+				muxop := "000";
+				side := true;
+			else
+				if exe_rf_rd = x then
+					if exe_rf_op = "10011" or exe_rf_op = "10010" then
+						muxop := "011";
+						side := true;
+					else
+						muxop := "100";
+						side := true;
+					end if;
+				else
+					side := false;
+				end if;
+			end if;
+		end look_ahead;
+		procedure look_ahead_ry is
+			variable side: boolean := false;
+			variable sidemuxop : std_logic_vector (2 downto 0) := "000";
+		begin
+			look_ahead (x => '0' & if_rf_st(7 downto 5), side => side, muxop => sidemuxop);
+			if side then
+				bmuxop <= sidemuxop;
+			else
+				bmuxop <= "010";
+			end if;
+		end look_ahead_ry;
+	begin
+		case if_rf_st (15 downto 11) is
+			when "01001" => -- addiu
+				bmuxop <= "001";
+			when "01000" => -- addiu3
+				bmuxop <= "001";
+			when "01100" => 
+				case if_rf_st (10 downto 8) is
+					when "011" => -- addsp
+						bmuxop <= "001";
+					when "000" => --btnez
+						bmuxop <= "111";
+					when "100" => --mtsp
+						look_ahead_ry;
+					when others =>
+				end case;
+			when "00000" => --addsp3
+				bmuxop <= "001";
+			when "00010" => -- b
+				bmuxop <= "111";
+			when "00100" => -- beqz
+				bmuxop <= "111";
+			when "00101" => -- bnez
+				bmuxop <= "111";
+			when "01110" => -- cmpi
+				bmuxop <= "001";
+			when "01101" => -- li
+				bmuxop <= "001";
+			when "10011" => -- lw
+				bmuxop <= "001";
+			when "10010" => -- lw_sp
+				bmuxop <= "001";
+			when "00110" => 
+				case if_rf_st(1 downto 0) is
+					when "00" => -- sll
+						bmuxop <= "001";
+					when "11" => -- sra
+						bmuxop <= "001";
+					when others =>
+				end case;
+			when "01010" => -- slti
+				bmuxop <= "001";	
+			when "01111" => --move
+				look_ahead_ry;
+			when "11011" => -- sw
+				bmuxop <= "001";
+			when "11010" => -- swsp
+				bmuxop <= "001";
+			when "11100" => 
+				case if_rf_st(1 downto 0) is
+					when "01" => --addu
+						look_ahead_ry;
+					when "11" => --subu
+						look_ahead_ry;
+					when others =>
+				end case;
+			when "11101" =>
+				case if_rf_st(4 downto 0) is
+					when "01100" => -- and
+						look_ahead_ry;
+					when "01010" => --cmp
+						look_ahead_ry;
+					when "11101" => --or
+						look_ahead_ry;
+					when "00100" => -- sllv
+						look_ahead_ry;
+					when "00000" => 
+						if if_rf_st(7 downto 5) = "0000" then --jr
+							bmuxop <= "111";
+						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+							bmuxop <= "110";
+						else
+						end if;
+					when others =>
+				end case;
+			when "11110" => --mfih and mtih
+				case if_rf_st(0) is
+					when '0' => -- mfih
+						bmuxop <= "110";
+					when '1' => -- mtih
+						bmuxop <= "110";
+					when others =>
+						bmuxop <= "111";
+				end case;
+			when others =>
+		end case;
+	end process;
+	-- AMUXOP
 	process (if_rf_st, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
     -- AMuxOp
     -- 0000 | EXE_RF_Res
