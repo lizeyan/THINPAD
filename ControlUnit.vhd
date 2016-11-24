@@ -415,7 +415,7 @@ begin
 	-- 如果性能不足，可以拆开成两个process分别产生
 	-- 产生ID_RFOP
 	-- 产生IF_RFOP
-	process (if_rf_st, pc_rf_pc, idpc, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd, exe_res, id_rf_opc)
+	process (if_rf_st, pc_rf_pc, idpc, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd, exe_res, if_rf_opc)
 		variable target_failed : boolean := false; --跳转指令发现预测失败
 		variable last_lw_rd, last_last_lw_rd, last_rd : boolean := false; --发现数据冲突
 		variable n_written_st, nn_written_st: boolean := false; --发现之后有sw指令在写入该指令的地址

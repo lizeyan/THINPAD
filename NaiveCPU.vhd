@@ -150,6 +150,7 @@ architecture Behavioral of NaiveCPU is
                IF_Ins : in std_logic_vector(15 downto 0);
                IF_RF_OP : in std_logic_vector(4 downto 0);
                IF_RF_St : in std_logic_vector (15 downto 0);  -- IF段寄存器中保存的，指令的内容。因为有的指令需要判断funct字段
+					IF_RF_OPC : in STD_LOGIC_VECTOR (15 downto 0);
                IDPC : in std_logic_vector (15 downto 0);  -- IDPCRXT产生的IDPC
                ID_RF_OP : in std_logic_vector(4 downto 0); 
                ID_RF_Rd : in std_logic_vector(3 downto 0);
