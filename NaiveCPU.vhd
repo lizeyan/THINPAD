@@ -71,24 +71,25 @@ architecture Behavioral of NaiveCPU is
     component AMux
         Port ( AMuxOp : in STD_LOGIC_VECTOR(3 downto 0); --
                ASrc : out STD_LOGIC_VECTOR(15 downto 0);
+					
+               EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
                ID_RF_PC : in STD_LOGIC_VECTOR(15 downto 0);
                ID_RF_Rx : in STD_LOGIC_VECTOR(15 downto 0);
                ID_RF_Ry : in STD_LOGIC_VECTOR(15 downto 0);
                ID_RF_IH : in STD_LOGIC_VECTOR(15 downto 0);
                ID_RF_SP : in STD_LOGIC_VECTOR(15 downto 0);
                ID_RF_T : in STD_LOGIC_VECTOR(15 downto 0);
-               EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
-               MEM_RF_LW : in STD_LOGIC_VECTOR(15 downto 0); --mem段寄存器中mem取出的数据
-               MEM_RF_Res : in STD_LOGIC_VECTOR(15 downto 0)); --mem段寄存器中alu计算的结果
+               MEM_RF_LW : in STD_LOGIC_VECTOR(15 downto 0); --mem锟轿寄达拷锟斤拷锟斤拷mem取锟斤拷锟斤拷锟斤拷锟斤拷
+               MEM_RF_Res : in STD_LOGIC_VECTOR(15 downto 0)); --mem锟轿寄达拷锟斤拷锟斤拷alu锟斤拷锟斤拷锟侥斤拷锟斤拷
     end component;
     
     -- ALU Src B Mux
     component BMux
         Port ( BMuxOp : in STD_LOGIC_VECTOR(2 downto 0);--
                BSrc : out STD_LOGIC_VECTOR(15 downto 0);
+               EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
                ID_RF_Imm : in STD_LOGIC_VECTOR(15 downto 0);
                ID_RF_Ry : in STD_LOGIC_VECTOR(15 downto 0);
-               EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
                MEM_RF_LW : in STD_LOGIC_VECTOR(15 downto 0);
                MEM_RF_Res : in STD_LOGIC_VECTOR(15 downto 0));
     end component;
@@ -98,8 +99,8 @@ architecture Behavioral of NaiveCPU is
         Port ( clk : in std_logic;
                PDTPC : out std_logic_vector(15 downto 0);
                
-               BTBOp : in std_logic;
-               BTBTOp : in std_logic;
+               BTBOp : in std_logic; --锟角凤拷锟斤拷锟斤拷转指锟斤拷
+               BTBTOp : in std_logic; -- 锟角凤拷锟斤拷转
                IF_RF_OPC : in std_logic_vector(15 downto 0);
                
                IDPC : in std_logic_vector(15 downto 0);
@@ -110,7 +111,7 @@ architecture Behavioral of NaiveCPU is
     -- Clock Module
     component ClockModule
         Port ( clk_in : in STD_LOGIC;
-               --分频
+               --锟斤拷频
 					clk: out STD_LOGIC;
                clk_2 : out STD_LOGIC;
                clk_4 : out STD_LOGIC;
@@ -121,22 +122,22 @@ architecture Behavioral of NaiveCPU is
     -- Control Unit
     component ControlUnit
         Port ( -- IF
-               ExDigitsOp : out std_logic_vector(2 downto 0); --扩展位数控制
+               ExDigitsOp : out std_logic_vector(2 downto 0); --锟斤拷展位锟斤拷锟斤拷锟斤拷
                ExSignOp : out std_logic; 
                
                -- ID
-               AluOp : out std_logic_vector(3 downto 0); --alu操作数
+               AluOp : out std_logic_vector(3 downto 0); --alu锟斤拷锟斤拷锟斤拷
                AMuxOp : out std_logic_vector(3 downto 0);
                BMuxOp : out std_logic_vector(2 downto 0);
-               DirOp : out std_logic_vector(2 downto 0); --rd的选择信号
+               DirOp : out std_logic_vector(2 downto 0); --rd锟斤拷选锟斤拷锟脚猴拷
                IDPCOp : out std_logic_vector(1 downto 0);  
                
                -- add
                BTBOp : out std_logic;  -- is jumping ins(1) or not(0)
-               RamRWOp : out std_logic; -- 0 read, 1 write --保存到ID_RF
-               RegWrbOp : out std_logic_vector(1 downto 0); -- 寄存器写回数据的选择 -- 保存到ID_RF
+               RamRWOp : out std_logic; -- 0 read, 1 write --锟斤拷锟芥到ID_RF
+               RegWrbOp : out std_logic_vector(1 downto 0); -- 锟侥达拷锟斤拷写锟斤拷锟斤拷锟捷碉拷选锟斤拷 -- 锟斤拷锟芥到ID_RF
                RXTOp : out std_logic_vector(2 downto 0);
-               SWSrc : out std_logic; -- 0 rx, 1 ry --保存到ID_RF
+               SWSrc : out std_logic; -- 0 rx, 1 ry --锟斤拷锟芥到ID_RF
                
                -- ENABLE  complex
                EXE_RFOp : out std_logic_vector(1 downto 0);
@@ -145,18 +146,18 @@ architecture Behavioral of NaiveCPU is
                MEM_RFOp : out std_logic_vector(1 downto 0);
                PC_RFOp : out std_logic_vector(2 downto 0);
                
-               -- 在IF段刚刚从内存中取出的新鲜的指令
+               -- 锟斤拷IF锟轿刚刚达拷锟节达拷锟斤拷取锟斤拷锟斤拷锟斤拷锟绞碉拷指锟斤拷
                PC_RF_PC : in std_logic_vector (15 downto 0);
                IF_Ins : in std_logic_vector(15 downto 0);
                IF_RF_OP : in std_logic_vector(4 downto 0);
-               IF_RF_St : in std_logic_vector (15 downto 0);  -- IF段寄存器中保存的，指令的内容。因为有的指令需要判断funct字段
+               IF_RF_St : in std_logic_vector (15 downto 0);  -- IF锟轿寄达拷锟斤拷锟叫憋拷锟斤拷锟侥ｏ拷指锟斤拷锟斤拷锟斤拷锟捷★拷锟斤拷为锟叫碉拷指锟斤拷锟斤拷要锟叫讹拷funct锟街讹拷
 					IF_RF_OPC : in STD_LOGIC_VECTOR (15 downto 0);
-               IDPC : in std_logic_vector (15 downto 0);  -- IDPCRXT产生的IDPC
+               IDPC : in std_logic_vector (15 downto 0);  -- IDPCRXT锟斤拷锟斤拷锟斤拷IDPC
                ID_RF_OP : in std_logic_vector(4 downto 0); 
                ID_RF_Rd : in std_logic_vector(3 downto 0);
                EXE_RF_OP : in std_logic_vector(4 downto 0);
                EXE_RF_Rd : in std_logic_vector(3 downto 0);
-               EXE_Res : in std_logic_vector (15 downto 0);  -- ALU的即时输出
+               EXE_Res : in std_logic_vector (15 downto 0);  -- ALU锟侥硷拷时锟斤拷锟斤拷
                MEM_RF_OP : in std_logic_vector(4 downto 0);
                MEM_RF_Rd : in std_logic_vector(3 downto 0));
     end component;
@@ -168,7 +169,7 @@ architecture Behavioral of NaiveCPU is
     end component;
     
     -- Direction Module
-	 -- 选择RD
+	 -- 选锟斤拷RD
     component DirectionModule
         Port ( ID_Rd : out STD_LOGIC_VECTOR(3 downto 0);
                DirOp : in STD_LOGIC_VECTOR(2 downto 0);
@@ -181,9 +182,9 @@ architecture Behavioral of NaiveCPU is
     -- EXE/MEM Register
     component EXE_RF
         Port ( clk : in STD_LOGIC;
-					-- 10 => 写入in信号
-					-- 11 => 写入NOP指令对应的信号
-					-- others => 不写入
+					-- 10 => 写锟斤拷in锟脚猴拷
+					-- 11 => 写锟斤拷NOP指锟斤拷锟斤拷应锟斤拷锟脚猴拷
+					-- others => 锟斤拷写锟斤拷
                EXE_RFOp : in STD_LOGIC_VECTOR(1 downto 0);  -- 10 for WE_N, 11 for NOP, 0- for WE
                
                RF_Flags_In : in STD_LOGIC_VECTOR(3 downto 0);
@@ -222,7 +223,7 @@ architecture Behavioral of NaiveCPU is
     component IDPCRXT
         Port ( BTBTOp : out std_logic;
                IDPC : out std_logic_vector(15 downto 0);
-               IDPCOp : in std_logic_vector(1 downto 0); --是否是分支指令。
+               IDPCOp : in std_logic_vector(1 downto 0); --锟角凤拷锟角凤拷支指锟筋。
                RXTOp : in std_logic_vector(2 downto 0);
                
                ID_Res : in std_logic_vector(15 downto 0);
@@ -377,7 +378,7 @@ architecture Behavioral of NaiveCPU is
     end component;
     
     -- Registers
-    -- 寄存器堆
+    -- 锟侥达拷锟斤拷锟斤拷
     component Registers
         Port ( clk : in STD_LOGIC;
                IF_RF_RX : in STD_LOGIC_VECTOR(2 downto 0);
@@ -428,7 +429,8 @@ architecture Behavioral of NaiveCPU is
     end component;
     
     -- Clock Signals
-	signal clk: STD_LOGIC;
+	 -- 锟斤拷clockmodule锟斤拷锟缴ｏ拷锟斤拷锟接碉拷锟斤拷锟斤拷component
+	 signal clk: STD_LOGIC;
     signal clk_2 : STD_LOGIC;
     signal clk_4 : STD_LOGIC;
     signal clk_8 : STD_LOGIC;
@@ -475,10 +477,10 @@ architecture Behavioral of NaiveCPU is
     signal IDPC : STD_LOGIC_VECTOR(15 downto 0);
     signal PDTPC : STD_LOGIC_VECTOR(15 downto 0);
     -- EXE
-    signal ASrc : STD_LOGIC_VECTOR(15 downto 0);
-    signal BSrc : STD_LOGIC_VECTOR(15 downto 0);
-    signal AluRes : STD_LOGIC_VECTOR(15 downto 0);
-    signal AluFlags : STD_LOGIC_VECTOR(3 downto 0);  -- ZCSO
+    signal ASrc : STD_LOGIC_VECTOR(15 downto 0); --鐩存帴缁橝LU
+    signal BSrc : STD_LOGIC_VECTOR(15 downto 0); --鐩存帴缁橝LU
+    signal AluRes : STD_LOGIC_VECTOR(15 downto 0); --鐩存帴鍙朅LU鐨勮緭鍑
+    signal AluFlags : STD_LOGIC_VECTOR(3 downto 0);  -- ZCSO --鐩存帴鍙朅LU鐨勮緭鍑
     -- MEM
     signal MEM_LW : STD_LOGIC_VECTOR(15 downto 0);
     -- WB

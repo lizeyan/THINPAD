@@ -77,9 +77,9 @@ begin
 					rx <= rf_rx_in;
 					ry <= rf_ry_in;
 					st <= rf_st_in;
+				  ramrw <= RF_RamRWOp_In;
+				  regwrb <= RF_RegWrbOp_In;
                     
-                    ramrw <= '1';
-                    regwrb <= "11";
 			elsif exe_rfop = "11" then
 					flags <= "0000";
 					pc <= "0000000000000000"; -- ?
@@ -88,9 +88,9 @@ begin
 					rx <= "0000000000000000";
 					ry <= "0000000000000000";
 					st <= "0000100000000000";
+				  ramrw <= '1';
+				  regwrb <= "11";
                     
-                    ramrw <= RF_RamRWOp_In;
-                    regwrb <= RF_RegWrbOp_In;
             else
                 null;
 			end if;

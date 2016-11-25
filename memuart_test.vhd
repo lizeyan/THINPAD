@@ -43,7 +43,6 @@ ARCHITECTURE behavior OF memuart_test IS
     PORT(
          clk : IN  std_logic;
          rst : IN  std_logic;
-         IF_ENOP : IN  std_logic;
          PC_RF_PC : IN  std_logic_vector(15 downto 0);
          IF_Ins : OUT  std_logic_vector(15 downto 0);
          MEM_SW_SrcOP : IN  std_logic;
@@ -74,7 +73,6 @@ ARCHITECTURE behavior OF memuart_test IS
    --Inputs
    signal clk : std_logic := '0';
    signal rst : std_logic := '0';
-   signal IF_ENOP : std_logic := '0';
    signal PC_RF_PC : std_logic_vector(15 downto 0) := (others => '0');
    signal MEM_SW_SrcOP : std_logic := '0';
    signal EXE_RF_Res : std_logic_vector(15 downto 0) := (others => '0');
@@ -86,8 +84,8 @@ ARCHITECTURE behavior OF memuart_test IS
    signal Tsre : std_logic := '0';
 
 	--BiDirs
-   signal Data1 : std_logic_vector(15 downto 0);
-   signal Data2 : std_logic_vector(15 downto 0);
+   signal Data1 : std_logic_vector(15 downto 0) := "0000000000000000";
+   signal Data2 : std_logic_vector(15 downto 0) := "0000000000000000";
 
  	--Outputs
    signal IF_Ins : std_logic_vector(15 downto 0);
@@ -112,7 +110,6 @@ BEGIN
    uut: MemUart PORT MAP (
           clk => clk,
           rst => rst,
-          IF_ENOP => IF_ENOP,
           PC_RF_PC => PC_RF_PC,
           IF_Ins => IF_Ins,
           MEM_SW_SrcOP => MEM_SW_SrcOP,
@@ -158,37 +155,40 @@ BEGIN
 		exe_rf_res <= "0000000011111111";
 		ramrwop <= '0';
 		data2 <= "1010000010100000";
-		wait for clk_period * 2;
+		wait for clk_period * 4;
 		-- Ð´ram2
+		data2 <= "ZZZZZZZZZZZZZZZZ";
 		pc_rf_pc <= "0000000000011111";
 		exe_rf_res <= "0000000011111110";
 		ramrwop <= '1';
 		mem_sw_srcop <= '0';
 		exe_rf_rx <= "1111000000001111";
 		exe_rf_ry <= "0000111111110000";
-		wait for clk_period * 2;
+		wait for clk_period * 4;
 		
 		-- ¶Áram1
 		pc_rf_pc <= "0000000000001111";
 		exe_rf_res <= "1000000011111111";
+		data1 <= "1010101111110000";
 		ramrwop <= '0';
 		data2 <= "1010000010100000";
-		wait for clk_period * 2;
+		wait for clk_period * 4;
 		-- Ð´ram1
+		data1 <= "ZZZZZZZZZZZZZZZZ";
 		pc_rf_pc <= "0000000000011111";
 		exe_rf_res <= "1000000011111110";
 		ramrwop <= '1';
 		mem_sw_srcop <= '0';
 		exe_rf_rx <= "1111000000001111";
 		exe_rf_ry <= "0000111111110000";
-		wait for clk_period * 2;
+		wait for clk_period * 4;
 		
 		-- ¶Á´®¿ÚÊý¾Ý
 		pc_rf_pc <= "0000000000001111";
 		exe_rf_res <= "1011111100000000";
 		ramrwop <= '0';
 		data2 <= "1010000010100000";
-		wait for clk_period * 2;
+		wait for clk_period * 4;
 		
 		-- Ð´´®¿ÚÊý¾Ý
 		pc_rf_pc <= "0000000000011111";
@@ -197,15 +197,26 @@ BEGIN
 		mem_sw_srcop <= '0';
 		exe_rf_rx <= "1111000000001111";
 		exe_rf_ry <= "0000111111110000";
-		wait for clk_period * 2;
+		wait for clk_period * 4;
 		
 		-- ¶Á´®¿Ú×´Ì¬
 		pc_rf_pc <= "0000000000001111";
 		exe_rf_res <= "1011111100000001";
 		ramrwop <= '0';
 		data2 <= "1010000010100000";
-		wait for clk_period * 2;
-
+		dataready <= '0';
+		tbre <= '1';
+		tsre <= '1';
+		wait for clk_period * 4;
+		
+		pc_rf_pc <= "0000000000001111";
+		exe_rf_res <= "1011111100000001";
+		ramrwop <= '0';
+		data2 <= "1010000010100000";
+		dataready <= '1';
+		tbre <= '0';
+		tsre <= '1';
+		wait for clk_period * 4;
    end process;
 
 END;
