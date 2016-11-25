@@ -671,7 +671,7 @@ begin
     
     Process_EXE_RF: EXE_RF
     port map (
-        clk => clk,
+        clk => clk_4,
         EXE_RFOp => EXE_RFOp,
         
         RF_Flags_In => AluFlags,
@@ -731,7 +731,7 @@ begin
     
     Process_ID_RF: ID_RF
     port map (
-        clk => clk,
+        clk => clk_4,
         ID_RFOp => ID_RFOp,
         
         RF_Imm_In => IF_RF_IMM,
@@ -793,7 +793,7 @@ begin
     
     Process_MEM_RF: MEM_RF
     port map (
-        clk => clk,
+        clk => clk_4,
         MEM_RFOp => MEM_RFOp,
         RF_Flags_In => EXE_RF_Flags,
         RF_LW_In => MEM_LW,

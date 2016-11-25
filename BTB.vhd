@@ -35,7 +35,7 @@ entity BTB is
            PC_RF_PC : in std_logic_vector(15 downto 0));
 end BTB;
 
-architecture Behavioral of BTB is
+ architecture Behavioral of BTB is
 --    type btbr_type is array(255 downto 0) of std_logic_vector(25 downto 0);  -- 8 HPC + 2 buf + 16 Target
 --    signal BTBTable : btbr_type := (others => (others => '0'));
 --    
