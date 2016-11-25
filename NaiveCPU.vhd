@@ -800,6 +800,8 @@ begin
         RF_RegWrbOp_OUT => MEM_RF_RegWrbOp
     );
     
+	 if_ins <= inputSW;
+	 
     Process_MemUart: MemUart
     port map (
         clk => clk,
@@ -807,7 +809,7 @@ begin
         mem_sw_srcop => swsrc, 
         
         PC_RF_PC => PC_RF_PC,
-        IF_Ins => IF_Ins,
+--        IF_Ins => IF_Ins, -- if_ins 暂时被连接到拨码开关上
         
         EXE_RF_Res => EXE_RF_Res,
         EXE_RF_Rx => EXE_RF_Rx,
