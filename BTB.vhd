@@ -79,12 +79,14 @@ begin
 		end if;
     end process;
     
-    process(PC_RF_PC, IF_RF_PC)
+    process(clk, PC_RF_PC, IF_RF_PC)
     begin
+		if falling_edge (clk) then
         if BTBTable(CONV_INTEGER(PC_RF_PC(7 downto 0)))(25 downto 18)=PC_RF_PC(15 downto 8) and BTBTable(CONV_INTEGER(PC_RF_PC(7 downto 0)))(17)='1' then
             PDTPC <= BTBTable(CONV_INTEGER(PC_RF_PC(7 downto 0)))(15 downto 0);
         else
             PDTPC <= IF_RF_PC;
         end if;
+		end if;
     end process;        
 end Behavioral;

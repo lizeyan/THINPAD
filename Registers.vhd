@@ -44,7 +44,8 @@ architecture Behavioral of Registers is
 --1000    signal IH : STD_LOGIC_VECTOR(15 downto 0); 8 
 --1001    signal SP : STD_LOGIC_VECTOR(15 downto 0); 9
 --1010    signal T : STD_LOGIC_VECTOR(15 downto 0); 10
-    type regs is array(10 downto 0) of std_logic_vector(15 downto 0);
+-- others 不合法，不能读写
+    type regs is array(15 downto 0) of std_logic_vector(15 downto 0);
     signal data : regs := (others => (others => '0'));
 begin
     process(data)
@@ -60,21 +61,23 @@ begin
         IH <= data(8);
         SP <= data(9);
         T <= data(10);
-     end process;
---read
-    process(data, IF_RF_RX, IF_RF_RY, RegWrbAddr, RegWrbData)
-    begin
-        ID_Rx <= data(conv_integer(IF_RF_RX));
-        ID_RY <= data(conv_integer(IF_RF_RY));
-        ID_IH <= data(8);
+		  ID_IH <= data(8);
         ID_SP <= data(9);
         ID_T <= data(10);
-    end process;
--- write
-    process(clk, RegWrbAddr, RegWrbData)
+	 end process;
+
+    process(clk, RegWrbAddr, RegWrbData, IF_RF_RX, IF_RF_RY)
     begin
-        if(clk'event and clk='1' and RegWrbAddr<11) then
+        if rising_edge(clk) then
+				ID_Rx <= data(conv_integer(IF_RF_RX));
+				ID_RY <= data(conv_integer(IF_RF_RY));
             data(conv_integer(RegWrbAddr)) <= RegWrbData;
-        end if;
+				if regwrbaddr = ('0' & if_rf_rx) then
+					id_rx <= regwrbdata;
+				end if;
+				if regwrbaddr = ('0' & if_rf_ry) then
+					id_ry <= regwrbdata;
+				end if;
+			end if;
     end process;
 end Behavioral;

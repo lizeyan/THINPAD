@@ -104,9 +104,13 @@ BEGIN
       -- hold reset state for 100 ns.
 
       -- insert stimulus here 
-        
         RegWrbAddr <= "0000";
-        RegWrbData <= "1111111111111111";   
+        RegWrbData <= "1111000011110000";
+		  if_rf_rx <= "000";
+		  if_rf_ry <= "000";
+		  wait for 10ns;
+        RegWrbAddr <= "0000";
+        RegWrbData <= "0000111111111111";   
         IF_RF_RX <= "000";
         IF_RF_RY <= "000";
         wait for 10 ns;
