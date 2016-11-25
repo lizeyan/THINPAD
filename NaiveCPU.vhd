@@ -479,8 +479,8 @@ architecture Behavioral of NaiveCPU is
     -- EXE
     signal ASrc : STD_LOGIC_VECTOR(15 downto 0); --直接给ALU
     signal BSrc : STD_LOGIC_VECTOR(15 downto 0); --直接给ALU
-    signal AluRes : STD_LOGIC_VECTOR(15 downto 0); --直接取ALU的输�
-    signal AluFlags : STD_LOGIC_VECTOR(3 downto 0);  -- ZCSO --直接取ALU的输�
+    signal AluRes : STD_LOGIC_VECTOR(15 downto 0); --直接取ALU的输��
+    signal AluFlags : STD_LOGIC_VECTOR(3 downto 0);  -- ZCSO --直接取ALU的输��
     -- MEM
     signal MEM_LW : STD_LOGIC_VECTOR(15 downto 0);
     -- WB
