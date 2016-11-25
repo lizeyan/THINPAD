@@ -48,7 +48,7 @@ begin
 				when "001" => eximm <= "00000000" & exsrc(7 downto 0);
 				when "011" => eximm <= "00000000000" & exsrc (4 downto 0);
 				when "010" => eximm <= "0000000000000" & exsrc (4 downto 2);
-                when "110" => eximm <= "000000000000" & exsrc(3 downto 0);
+				 when "110" => eximm <= "000000000000" & exsrc(3 downto 0);
 				when others => eximm <= "1111111111111111";
 			end case;
 		elsif exsignop = '1' then
@@ -69,6 +69,9 @@ begin
 --					sign := exsrc(4);
 					eximm (2 downto 0) <= exsrc (4 downto 2);
 					eximm (15 downto 3) <= (others => exsrc(4));
+				when "110" =>
+					eximm (3 downto 0) <= exsrc (3 downto 0);
+					eximm (15 downto 4) <= (others => exsrc(3));
 				when others => eximm <= "1111111111111111";
 			end case;
 		else
