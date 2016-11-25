@@ -49,7 +49,7 @@ begin
 				when "011" => eximm <= "00000000000" & exsrc (4 downto 0);
 				when "010" => eximm <= "0000000000000" & exsrc (4 downto 2);
                 when "110" => eximm <= "000000000000" & exsrc(3 downto 0);
-				when others => eximm <= "ZZZZZZZZZZZZZZZZ";
+				when others => eximm <= "1111111111111111";
 			end case;
 		elsif exsignop = '1' then
 			case exdigitsop is
@@ -69,10 +69,10 @@ begin
 --					sign := exsrc(4);
 					eximm (2 downto 0) <= exsrc (4 downto 2);
 					eximm (15 downto 3) <= (others => exsrc(4));
-				when others => eximm <= "ZZZZZZZZZZZZZZZZ";
+				when others => eximm <= "1111111111111111";
 			end case;
 		else
-			eximm <= "ZZZZZZZZZZZZZZZZ";
+			eximm <= "1111111111111111";
 		end if;
 	end process;
 

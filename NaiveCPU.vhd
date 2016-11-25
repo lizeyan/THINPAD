@@ -237,7 +237,7 @@ architecture Behavioral of NaiveCPU is
     -- ID PC Adder
     component ID_PCAdder
         Port ( IF_RF_PC : in STD_LOGIC_VECTOR(15 downto 0);
-               ID_Imm : in STD_LOGIC_VECTOR(15 downto 0);
+               ID_Imm : in STD_LOGIC_VECTOR(15 downto 0); -- use IF_RF_IMM actually
                ID_Res : out STD_LOGIC_VECTOR(15 downto 0));
     end component;
     
@@ -465,7 +465,7 @@ architecture Behavioral of NaiveCPU is
     signal IF_Imm : STD_LOGIC_VECTOR(15 downto 0);
     -- ID
     signal ID_IH : STD_LOGIC_VECTOR(15 downto 0);
-    signal ID_Imm : STD_LOGIC_VECTOR(15 downto 0);
+--    signal ID_Imm : STD_LOGIC_VECTOR(15 downto 0);
     signal ID_Rd : STD_LOGIC_VECTOR(3 downto 0);
     signal ID_Res : STD_LOGIC_VECTOR(15 downto 0);
     signal ID_Rx : STD_LOGIC_VECTOR(15 downto 0);
@@ -711,7 +711,7 @@ begin
     Process_ID_PCAdder: ID_PCAdder
     port map (
         IF_RF_PC => IF_RF_PC,
-        ID_Imm => ID_Imm,
+        ID_Imm => IF_RF_IMM,
         ID_Res => ID_Res
     );
     
@@ -720,7 +720,7 @@ begin
         clk => clk,
         ID_RFOp => ID_RFOp,
         
-        RF_Imm_In => ID_Imm,
+        RF_Imm_In => IF_RF_IMM,
         RF_IH_In => ID_IH,
         RF_PC_In => IF_RF_PC,
         RF_Res_In => ID_Res,

@@ -78,7 +78,7 @@ begin
 				when "1010" =>
 					ASrc <= "0000000000000000";
             when others => 
-                ASrc <= (others => 'Z');
+                ASrc <= (others => '1');
         end case;
     end process;
 end Behavioral;

@@ -63,11 +63,11 @@ entity ID_RF is
 end ID_RF;
 
 architecture Behavioral of ID_RF is
-    signal ramrw : std_logic;
-    signal regwrb : std_logic_vector(1 downto 0);
-    signal bmux : std_logic_vector(2 downto 0);
-    signal rd, alu, amux : std_logic_vector(3 downto 0);
-    signal imm, ih, pc, res, rx, ry, sp, st, t : std_logic_vector(15 downto 0);
+    signal ramrw : std_logic := '1';
+    signal regwrb : std_logic_vector(1 downto 0) := "11";
+    signal bmux : std_logic_vector(2 downto 0) := "111";
+    signal rd, alu, amux : std_logic_vector(3 downto 0) := "1111";
+    signal imm, ih, pc, res, rx, ry, sp, st, t : std_logic_vector(15 downto 0) := "1111111111111111";
 begin
     RF_Imm_Out <= imm;
     RF_IH_Out <= ih;

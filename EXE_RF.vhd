@@ -50,10 +50,10 @@ entity EXE_RF is
 end EXE_RF;
 
  architecture Behavioral of EXE_RF is
-    signal ramrw : std_logic;
-    signal regwrb : std_logic_vector(1 downto 0);
-	signal flags, rd : STD_LOGIC_VECTOR (3 downto 0) := "0000"; --ozsc
-	signal pc, res, rx, ry, st: STD_LOGIC_VECTOR (15 downto 0) := "0000000000000000";
+    signal ramrw : std_logic := '1';
+    signal regwrb : std_logic_vector(1 downto 0) := "11";
+	signal flags, rd : STD_LOGIC_VECTOR (3 downto 0) := "1111"; --ozsc
+	signal pc, res, rx, ry, st: STD_LOGIC_VECTOR (15 downto 0) := "1111111111111111";
 begin
 	rf_flags_out <= flags;
 	rf_pc_out <= pc;

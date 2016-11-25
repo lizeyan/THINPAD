@@ -48,7 +48,7 @@ begin
 				when "10" =>
 					regwrbout <= "000000000000000" & mem_rf_flagsign;
 				when others =>
-					regwrbout <= "ZZZZZZZZZZZZZZZZ";
+					regwrbout <= "1111111111111111";
 			end case;
 		end process;
 

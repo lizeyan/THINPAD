@@ -165,9 +165,9 @@ begin
 				flagc := '0';
 				flago := '0';
 			when others =>
-				res := "ZZZZZZZZZZZZZZZZ";
-				flagc := 'Z';
-				flago := 'Z';
+				res := "1111111111111111";
+				flagc := '1';
+				flago := '1';
 		end case;
 		
 		flagz := '0';

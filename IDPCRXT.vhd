@@ -57,7 +57,7 @@ begin
             when "100" => 
                 RXTRes <= MEM_RF_Res;
             when others =>
-                RXTRes <= "ZZZZZZZZZZZZZZZZ";
+                RXTRes <= "1111111111111111";
         end case;
     end process;
     
@@ -98,7 +98,7 @@ begin
                 IDPC <= RXTRes;
                 BTBTOp <= '1';
             when others =>
-                IDPC <= "ZZZZZZZZZZZZZZZZ";
+                IDPC <= "1111111111111111";
                 BTBTOp <= '1';
         end case;
     end process;

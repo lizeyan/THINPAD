@@ -62,7 +62,7 @@ begin
 				when "110" =>
 					bsrc <= "0000000000000000";
             when others => 
-                BSrc <= (others => 'Z');
+                BSrc <= (others => '1');
         end case;
     end process;
 end Behavioral;

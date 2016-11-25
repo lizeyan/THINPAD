@@ -684,7 +684,7 @@ begin
 		elsif if_rf_st(15 downto 11) = "11101" and if_rf_st(7 downto 0) = "00000000" then --jr
 			idpcop <= "11";
 		else
-			idpcop <= "ZZ";
+			idpcop <= "11";
 		end if;
 	end process;
 	--------------------------------------------------------------------------------------------
