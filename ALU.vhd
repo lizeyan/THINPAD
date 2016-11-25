@@ -99,7 +99,7 @@ begin
 		if bsrc = "0000000000000000" then
 			Res_sra_imm <= To_StdLogicVector(To_bitvector(Asrc) sra 8);
 		else
-			Res_sra_imm <= To_StdLogicVector(To_bitvector(Asrc) sra CONV_INTEGER(Bsrc));
+			Res_sra_imm <= To_StdLogicVector(To_bitvector(Asrc) sra CONV_INTEGER(Bsrc(2 downto 0)));
 		end if;
 	end process;
 	
