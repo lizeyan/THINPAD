@@ -647,6 +647,18 @@ begin
         MEM_RF_Rd => MEM_RF_Rd
     );
     
+    process_Digit7LightLeft: Digit7Light
+    port map(
+        Data => PC_RF_PC(3 downto 0),
+        output => Digit7Left
+    );
+    
+    process_Digit7LightRight: Digit7Light
+    port map(
+        Data => PDTPC(3 downto 0),
+        output => Digit7Right
+    );
+    
     Process_DirectionModule: DirectionModule
     port map (
         ID_Rd => ID_Rd,
@@ -799,7 +811,7 @@ begin
         RF_St_Out => MEM_RF_St,
         RF_RegWrbOp_OUT => MEM_RF_RegWrbOp
     );
-    
+    IF_Ins <= inputSW;
     Process_MemUart: MemUart
     port map (
         clk => clk,
@@ -807,7 +819,7 @@ begin
         mem_sw_srcop => swsrc, 
         
         PC_RF_PC => PC_RF_PC,
-        IF_Ins => IF_Ins,
+        --IF_Ins => IF_Ins,
         
         EXE_RF_Res => EXE_RF_Res,
         EXE_RF_Rx => EXE_RF_Rx,
