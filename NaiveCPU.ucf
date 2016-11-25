@@ -1,5 +1,4 @@
 
-# PlanAhead Generated physical constraints 
 
 NET "Addr1[15]" LOC = H15;
 NET "Addr1[14]" LOC = H14;
@@ -104,7 +103,7 @@ NET "InputSW[0]" LOC = T7;
 NET "R[2]" LOC = A4;
 NET "R[1]" LOC = C3;
 NET "R[0]" LOC = A7;
-NET "clk_in" LOC = B9;
+NET "clk_in" LOC = U9;
 NET "DataReady" LOC = A16;
 NET "Hs" LOC = D6;
 NET "Ram1EN" LOC = M15;
