@@ -479,8 +479,8 @@ architecture Behavioral of NaiveCPU is
     -- EXE
     signal ASrc : STD_LOGIC_VECTOR(15 downto 0); --ç›´æŽ¥ç»™ALU
     signal BSrc : STD_LOGIC_VECTOR(15 downto 0); --ç›´æŽ¥ç»™ALU
-    signal AluRes : STD_LOGIC_VECTOR(15 downto 0); --ç›´æŽ¥å–ALUçš„è¾“å‡
-    signal AluFlags : STD_LOGIC_VECTOR(3 downto 0);  -- ZCSO --ç›´æŽ¥å–ALUçš„è¾“å‡
+    signal AluRes : STD_LOGIC_VECTOR(15 downto 0); --ç›´æŽ¥å–ALUçš„è¾“ï¿½ï¿½
+    signal AluFlags : STD_LOGIC_VECTOR(3 downto 0);  -- ZCSO --ç›´æŽ¥å–ALUçš„è¾“ï¿½ï¿½
     -- MEM
     signal MEM_LW : STD_LOGIC_VECTOR(15 downto 0);
     -- WB
@@ -647,6 +647,18 @@ begin
         MEM_RF_Rd => MEM_RF_Rd
     );
     
+    process_Digit7LightLeft: Digit7Light
+    port map(
+        Data => PC_RF_PC(3 downto 0),
+        output => Digit7Left
+    );
+    
+    process_Digit7LightRight: Digit7Light
+    port map(
+        Data => PDTPC(3 downto 0),
+        output => Digit7Right
+    );
+    
     Process_DirectionModule: DirectionModule
     port map (
         ID_Rd => ID_Rd,
@@ -799,9 +811,7 @@ begin
         RF_St_Out => MEM_RF_St,
         RF_RegWrbOp_OUT => MEM_RF_RegWrbOp
     );
-    
-	 if_ins <= inputSW;
-	 
+    IF_Ins <= inputSW;
     Process_MemUart: MemUart
     port map (
         clk => clk,
@@ -809,7 +819,7 @@ begin
         mem_sw_srcop => swsrc, 
         
         PC_RF_PC => PC_RF_PC,
---        IF_Ins => IF_Ins, -- if_ins ÔÝÊ±±»Á¬½Óµ½²¦Âë¿ª¹ØÉÏ
+        --IF_Ins => IF_Ins,
         
         EXE_RF_Res => EXE_RF_Res,
         EXE_RF_Rx => EXE_RF_Rx,
