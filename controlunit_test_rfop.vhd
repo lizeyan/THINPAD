@@ -155,7 +155,7 @@ BEGIN
 		-- IF_RFOP 00
         wait for 10 ns;
 		-- 仅跳转失败
-		-- ID_RFOP 10
+		-- ID_RFOP 00
 		-- IF_RFOP 11
         IF_RF_St <= "0010011100000000";
         IDPC <= "0000000000000001";
@@ -186,7 +186,7 @@ BEGIN
 		wait for 10 ns;
 		-- 跳转指令BEQZ 上一条指令是LW且目标冲突 且跳转失败
 		-- ID_RFOP 11
-		-- IF_RFOP 11
+		-- IF_RFOP 10
 		ID_RF_Op <= "10011";
         IDPC <= "0000000000000001";
         wait for 10 ns;
@@ -208,22 +208,22 @@ BEGIN
 		-- 跳转指令JR 上上条指令是LW且目标不冲突
 		-- ID_RFOP 00
 		-- IF_RFOP 00
+        ID_RF_Rd <= "0000";
 		EXE_RF_Rd <= "0000";
         wait for 10 ns;
 		-- 仅发现重写指令 IF
-		-- ID_RFOP 11
-		-- IF_RFOP 10
-        ID_RF_OP <= "11011";
-        IF_RF_OPC <= "0000000000000001";
+		-- ID_RFOP 00
+		-- IF_RFOP 11
+        ID_RF_OP <= "11011";  -- SW
+        PC_RF_PC <= "0000000000000001";
         EXE_Res <= "0000000000000001";
         wait for 10 ns;
         -- 仅发现重写指令 ID
 		-- ID_RFOP 11
 		-- IF_RFOP 11
-        ID_RF_OP <= "10011";
-        EXE_RF_OP <= "11010";
-        PC_RF_PC <= "0000000000000001";
+        IF_RF_OP <= "10011";  -- LW
+        ID_RF_OP <= "11010";  -- SW_SP
+        IF_RF_OPC <= "0000000000000001";
         wait for 10 ns;
    end process;
-
 END;
