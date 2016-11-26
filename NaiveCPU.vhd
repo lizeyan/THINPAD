@@ -585,7 +585,7 @@ architecture Behavioral of NaiveCPU is
     signal SP : std_logic_vector(15 downto 0);
     signal T : std_logic_vector(15 downto 0);
 begin
-	ledlights <= IF_RF_INS;
+	 ledlights <= IF_RF_INS;
 
 	 process (clk_50)
 	 begin
@@ -647,7 +647,7 @@ begin
     
     Process_ClockModule: ClockModule
     port map (
-        clk_in => clk_in,
+        clk_in => clk_50,
         clk => clk,
         clk_2 => clk_2,
         clk_4 => clk_4,
