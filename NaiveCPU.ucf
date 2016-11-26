@@ -104,6 +104,7 @@ NET "R[2]" LOC = A4;
 NET "R[1]" LOC = C3;
 NET "R[0]" LOC = A7;
 NET "clk_in" LOC = U9;
+NET "clk_50" LOC = B9;
 NET "DataReady" LOC = A16;
 NET "Hs" LOC = D6;
 NET "Ram1EN" LOC = M15;

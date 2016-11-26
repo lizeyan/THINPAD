@@ -24,6 +24,7 @@ use IEEE.std_logic_unsigned.all;
 
 entity NaiveCPU is
     Port ( clk_in : in STD_LOGIC;
+			  clk_50 : in std_logic;
            rst : in STD_LOGIC;
            InputSW : in STD_LOGIC_VECTOR(15 downto 0);
            
@@ -436,6 +437,8 @@ architecture Behavioral of NaiveCPU is
     signal clk_8 : STD_LOGIC;
     signal clk_16 : STD_LOGIC;
     
+	 signal clk_25 : std_logic;
+	 
     -- Wire Signals
     -- IF
     signal ExDigitsOp : std_logic_vector(2 downto 0);
@@ -547,6 +550,14 @@ architecture Behavioral of NaiveCPU is
     signal SP : std_logic_vector(15 downto 0);
     signal T : std_logic_vector(15 downto 0);
 begin
+
+	 process(clk_50)
+	 begin	
+		  if clk_50'event and clk_50='1' then
+			   clk_25 <= not clk_25;
+		  end if;
+	 end process;
+
     Process_ALU: ALU
     port map (
         AluOp => ID_RF_AluOp,
@@ -896,7 +907,7 @@ begin
     
     Process_VGAController: VGAController
     port map (
-        clk => clk_2,
+        clk => clk_25,
         rst => rst,
         InputSW => InputSW,
         Hs => Hs,
