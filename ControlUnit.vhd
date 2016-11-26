@@ -47,6 +47,7 @@ entity ControlUnit is
            IF_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
            MEM_RFOp : out STD_LOGIC_VECTOR(1 downto 0);
            PC_RFOp : out STD_LOGIC_VECTOR(2 downto 0);
+			  PC_RFWE: out STD_LOGIC;
            
            -- 在IF段刚刚从内存中取出的新鲜的指令
            PC_RF_PC: in STD_LOGIC_VECTOR (15 downto 0);
@@ -192,9 +193,9 @@ begin
 					when "00100" => -- sllv
 						look_ahead_ry;
 					when "00000" => 
-						if if_rf_st(7 downto 5) = "000" then --jr
+						if if_rf_st(7 downto 5) = "0000" then --jr
 							bmuxop <= "111";
-						elsif if_rf_st(7 downto 5) = "010" then --mfpc
+						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
 							bmuxop <= "110";
 						else
 							bmuxop <= "111";
@@ -365,9 +366,9 @@ begin
 					when "00100" => -- sllv
 						look_ahead_rx;
 					when "00000" => 
-						if if_rf_st(7 downto 5) = "000" then --jr
+						if if_rf_st(7 downto 5) = "0000" then --jr
 							amuxop <= "1111";
-						elsif if_rf_st(7 downto 5) = "010" then --mfpc
+						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
 							amuxop <= "0001";
 						else
 							amuxop <= "1111";
@@ -455,34 +456,43 @@ begin
 				if n_written_st then -- conflict with ins in ID
 					if_rfop <= "11";
 					id_rfop <= "11";
+					pc_rfwe <= '1';
 			   elsif nn_written_st then -- conflict with ins in IF
-					  if_rfop <= "11";
-					  id_rfop <= "00";
+				  if_rfop <= "11";
+				  id_rfop <= "00";
+					pc_rfwe <= '1';
 				elsif last_lw_rd then
 					if_rfop <= "10";
 					id_rfop <= "11";
+					pc_rfwe <= '0';
 				else
 					if_rfop <= "00";
 					id_rfop <= "00";
+					pc_rfwe <= '1';
 				end if;
 		end normal_ins;
 		procedure branch_ins(last_rd, last_lw_rd, last_last_lw_rd, nn_written_st, n_written_st, target_failed: in boolean) is
 		begin
 				if n_written_st then
 					if_rfop <= "11";
+					pc_rfwe <= '1';
 					id_rfop <= "11";
             elsif nn_written_st then
 					if_rfop <= "11";
+					pc_rfwe <= '1';
 					id_rfop <= "00";
             elsif target_failed and not (last_rd or last_last_lw_rd) then
 					if_rfop <= "11";
 					id_rfop <= "00";
+					pc_rfwe <= '1';
 			elsif last_rd or last_last_lw_rd then
-				if_rfop <= "10";
-				id_rfop <= "11";
+					if_rfop <= "10";
+					id_rfop <= "11";
+					pc_rfwe <= '0';
 			else
-				if_rfop <= "00";
-				id_rfop <= "00";
+					if_rfop <= "00";
+					id_rfop <= "00";
+					pc_rfwe <= '1';
 			end if;
 		end branch_ins;
 	begin
@@ -1085,8 +1095,8 @@ begin
 --					when "11101" => --or
 --					when "00100" => -- sllv
 --					when "00000" => 
---						if if_rf_st(7 downto 5) = "000" then --jr
---						elsif if_rf_st(7 downto 5) = "010" then --mfpc
+--						if if_rf_st(7 downto 5) = "0000" then --jr
+--						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
 --						else
 --						end if;
 --					when others =>

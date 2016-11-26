@@ -30,7 +30,7 @@ use IEEE.std_logic_unsigned.all;
 entity PC_RF is
     Port ( clk : in std_logic;
            PC_RFOp : in std_logic_vector(2 downto 0);
-                      
+           PC_RFWE: in std_logic;
            IDPC : in std_logic_vector(15 downto 0);
            EXE_RES_PC : in std_logic_vector(15 downto 0);
            PDTPC : in std_logic_vector(15 downto 0);
@@ -47,7 +47,7 @@ begin
 
     process(clk)
     begin
-        if clk'event and clk='1' then
+        if clk'event and clk='1' and pc_rfwe = '1' then
             case PC_RFOp is
                 when "000" => 
                     pc <= PDTPC;

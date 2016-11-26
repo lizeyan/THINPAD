@@ -24,7 +24,7 @@ use IEEE.std_logic_unsigned.all;
 
 entity NaiveCPU is
     Port ( clk_in : in STD_LOGIC;
-			  clk_50 : in std_logic;
+			  clk_50 : in STD_LOGIC;
            rst : in STD_LOGIC;
            InputSW : in STD_LOGIC_VECTOR(15 downto 0);
            
@@ -146,6 +146,7 @@ architecture Behavioral of NaiveCPU is
                IF_RFOp : out std_logic_vector(1 downto 0);
                MEM_RFOp : out std_logic_vector(1 downto 0);
                PC_RFOp : out std_logic_vector(2 downto 0);
+					PC_RFWE: out std_logic;
                
                -- ��IF�θոմ��ڴ���ȡ�������ʵ�ָ��
                PC_RF_PC : in std_logic_vector (15 downto 0);
@@ -369,8 +370,8 @@ architecture Behavioral of NaiveCPU is
     -- PC RF
     component PC_RF
         Port ( clk : in std_logic;
-               PC_RFOp : in std_logic_vector(2 downto 0);  -- 00 for PDTPC, 01 for IDPC, 10 for WE_down, 11 for NOP
-               
+               PC_RFOp : in std_logic_vector(2 downto 0);  -- 00 for PDTPC, 01 for IDPC, 10 for WE_down, 11 for EX
+               PC_RFWE : in std_logic;
                IDPC : in std_logic_vector(15 downto 0);
                EXE_RES_PC : in std_logic_vector(15 downto 0);
                PDTPC : in std_logic_vector(15 downto 0);
@@ -436,9 +437,7 @@ architecture Behavioral of NaiveCPU is
     signal clk_4 : STD_LOGIC;
     signal clk_8 : STD_LOGIC;
     signal clk_16 : STD_LOGIC;
-    
-	 signal clk_25 : std_logic;
-	 
+    signal clk_25 : STD_LOGIC;
     -- Wire Signals
     -- IF
     signal ExDigitsOp : std_logic_vector(2 downto 0);
@@ -462,6 +461,7 @@ architecture Behavioral of NaiveCPU is
     signal IF_RFOp : std_logic_vector(1 downto 0);
     signal MEM_RFOp : std_logic_vector(1 downto 0);
     signal PC_RFOp : std_logic_vector(2 downto 0);
+	 signal PC_RFWE : std_logic;
     
     -- IF/ID/EXE/MEM/WB signals
     -- IF
@@ -550,14 +550,12 @@ architecture Behavioral of NaiveCPU is
     signal SP : std_logic_vector(15 downto 0);
     signal T : std_logic_vector(15 downto 0);
 begin
-
-	 process(clk_50)
-	 begin	
-		  if clk_50'event and clk_50='1' then
-			   clk_25 <= not clk_25;
-		  end if;
+	 process (clk_50)
+	 begin
+		if rising_edge (clk_50) then
+			clk_25 <= not clk_25;
+		end if;
 	 end process;
-
     Process_ALU: ALU
     port map (
         AluOp => ID_RF_AluOp,
@@ -642,6 +640,7 @@ begin
         IF_RFOp => IF_RFOp,
         MEM_RFOp => MEM_RFOp,
         PC_RFOp => PC_RFOp,
+		  PC_RFWE => PC_RFWE, 
         
         PC_RF_PC => PC_RF_PC,
         IF_Ins => IF_Ins,
@@ -860,7 +859,7 @@ begin
     port map (
         clk => clk_4,
         PC_RFOp => PC_RFOp,
-        
+        PC_RFWE => PC_RFWE,
         IDPC => IDPC,
         EXE_RES_PC => ALURes,
         PDTPC => PDTPC,
