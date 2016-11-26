@@ -192,9 +192,9 @@ begin
 					when "00100" => -- sllv
 						look_ahead_ry;
 					when "00000" => 
-						if if_rf_st(7 downto 5) = "0000" then --jr
+						if if_rf_st(7 downto 5) = "000" then --jr
 							bmuxop <= "111";
-						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+						elsif if_rf_st(7 downto 5) = "010" then --mfpc
 							bmuxop <= "110";
 						else
 							bmuxop <= "111";
@@ -365,9 +365,9 @@ begin
 					when "00100" => -- sllv
 						look_ahead_rx;
 					when "00000" => 
-						if if_rf_st(7 downto 5) = "0000" then --jr
+						if if_rf_st(7 downto 5) = "000" then --jr
 							amuxop <= "1111";
-						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+						elsif if_rf_st(7 downto 5) = "010" then --mfpc
 							amuxop <= "0001";
 						else
 							amuxop <= "1111";
@@ -1085,8 +1085,8 @@ begin
 --					when "11101" => --or
 --					when "00100" => -- sllv
 --					when "00000" => 
---						if if_rf_st(7 downto 5) = "0000" then --jr
---						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+--						if if_rf_st(7 downto 5) = "000" then --jr
+--						elsif if_rf_st(7 downto 5) = "010" then --mfpc
 --						else
 --						end if;
 --					when others =>

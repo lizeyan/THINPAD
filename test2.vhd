@@ -150,16 +150,16 @@ BEGIN
    begin		
       -- 测试有关跳转的，你需要查看PC来确认是不是跳转，这里都是顺序会被执行的
 		wait for clk_in_period * 3;
-		inputsw <= "0110100000000001"; -- LI R0 1
+		inputsw <= "1101100011100000"; -- sw r0 r1 0
 		-- R0 1; PC 0
 		wait for clk_in_period * 4;
-		inputsw <= "0001000000000001"; -- B 1 
+		inputsw <= "0110100100000000"; -- li r1 5
 		-- R0 1; PC 1
 		wait for clk_in_period * 4;
-		inputsw <= "0100100000000001"; --ADDIU R0 1
+		inputsw <= "1001100000100001"; --lw r0 r1 1
 		--这条指令应该会被取出流水线，不发生影响
 		wait for clk_in_period * 4;
-		inputsw <= "1110100100001101"; -- OR R1 R0
+		inputsw <= "11101001000000000"; -- jr r1
 		-- R1 1: R0 1: PC 3
 		wait for clk_in_period * 4;
 		wait;
