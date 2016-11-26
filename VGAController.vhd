@@ -170,7 +170,6 @@ begin
     
     -- Graph Design
     process(clk, rst, x, y)
-	 variable G_register : STD_LOGIC_VECTOR(2 downto 0) := "000";
     begin
         if rst='0' then
             tempR <= (others => '0');
@@ -189,7 +188,6 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-								G_register := print_register(R0);
                         tempG <= print_register(R0);
                     elsif y>=30 and y<40 then
                         if x>=10 and x<40 then
@@ -199,7 +197,6 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-								G_register := print_register(R1);
                         tempG <= print_register(R1);
                     elsif y>=50 and y<60 then
                         if (x>=10 and x<30) or (x>=40 and x<50) then
@@ -209,7 +206,6 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-								G_register := print_register(R2);
                         tempG <= print_register(R2);
                     elsif y>=70 and y<80 then
                         if x>=10 and x<30 then
@@ -219,7 +215,6 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-								G_register := print_register(R3);
                         tempG <= print_register(R3);
                     elsif y>=90 and y<100 then
                         if (x>=10 and x<20) or (x>=30 and x<50) then
@@ -229,7 +224,6 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-                        G_register := print_register(R4);
                         tempG <= print_register(R4);
                     elsif y>=110 and y<120 then
                         if (x>=10 and x<20) or (x>=30 and x<40) then
@@ -239,7 +233,6 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-                        G_register := print_register(R5);
                         tempG <= print_register(R5);
                     elsif y>=130 and y<140 then
                         if (x>=10 and x<20) or (x>=40 and x<50) then
@@ -249,7 +242,6 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-								G_register := print_register(R6);
                         tempG <= print_register(R6);
                     elsif y>=150 and y<160 then
                         if x>=10 and x<20 then
@@ -259,9 +251,8 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-								G_register := print_register(R7);
                         tempG <= print_register(R7);
-                    elsif x>=190 and x<200 then
+                    elsif y>=190 and y<200 then
                         if x>=20 and x<50 then
                             tempR <= half;
                         elsif x>=10 and x<20 then
@@ -269,9 +260,8 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-								G_register := print_register(IH);
                         tempG <= print_register(IH);
-                    elsif x>=210 and x<220 then
+                    elsif y>=210 and y<220 then
                         if x>=20 and x<40 then
                             tempR <= half;
                         elsif (x>=10 and x<20) or (x>=40 and x<50) then
@@ -279,9 +269,8 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-								G_register := print_register(SP);
                         tempG <= print_register(SP);
-                    elsif x>=230 and x<240 then
+                    elsif y>=230 and y<240 then
                         if (x>=20 and x<30) or (x>=40 and x<50) then
                             tempR <= half;
                         elsif (x>=10 and x<20) or (x>=30 and x<40) then
@@ -289,11 +278,10 @@ begin
                         else
                             tempR <= (others => '0');
                         end if;
-								G_register := print_register(T);
                         tempG <= print_register(T);
                     else
                         tempR <= (others => '0');
-                        tempG <= (others => '1');
+                        tempG <= (others => '0');
                     end if;
                     tempB <= (others => '0');
                 end if;
