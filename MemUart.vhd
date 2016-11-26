@@ -56,6 +56,8 @@ entity MemUart is
            Ram2WE : out STD_LOGIC;
            UartRdn : out STD_LOGIC;
            UartWrn : out STD_LOGIC;
+			  -------DEBUG--------------
+			  state_out : out std_logic_vector (3 downto 0);
            DataReady : in STD_LOGIC;
            Tbre : in STD_LOGIC;
            Tsre : in STD_LOGIC);
@@ -63,25 +65,34 @@ end MemUart;
 
 architecture Behavioral of MemUart is
 	signal state: STD_LOGIC_VECTOR (1 downto 0) := "00";
+	shared variable data : std_logic_vector (15 downto 0) := "0000000000000000";
 begin
+	state_out <= "00" & state;
+	
 	process (clk, rst)
+		variable write_data : std_logic_vector (15 downto 0) := "0000000000000000";
 	begin
 		if rst = '0' then
 			state <= "00";
 		elsif rising_edge (clk) then
+			if mem_sw_srcop = '0' then
+				write_data := exe_rf_rx;
+			else
+				write_data := exe_rf_ry;
+			end if;
 			case state is 
 				when "00" =>
 					if_ins <= "0000100000000000";
-					mem_lw <= "1111111111111111";
-					data1 <= "ZZZZZZZZZZZZZZZZ";
-					data2 <= "ZZZZZZZZZZZZZZZZ";
 					if exe_rf_res(15 downto 2) = "10111111000000" then
 						ram1en <= '1';		ram1oe <= '1';		ram1we <= '1';		addr1 <= "ZZZZZZZZZZZZZZZZ";
-						ram2en <= '1';		ram2oe <= '1';		ram2we <= '1';	addr2 <= "ZZZZZZZZZZZZZZZZ";
+						ram2en <= '1';		ram2oe <= '1';		ram2we <= '1';		addr2 <= "ZZZZZZZZZZZZZZZZ";
 						uartwrn <= '1';	uartrdn <= '1';
+						data1 <= "ZZZZZZZZZZZZZZZZ";
+						data2 <= "ZZZZZZZZZZZZZZZZ";
 					elsif exe_rf_res (15) = '1' then
 						ram2en <= '1';		ram2oe <= '1';		ram2we <= '1'; 	addr2 <= "ZZZZZZZZZZZZZZZZ";
 						uartwrn <= '1';	uartrdn <= '1';
+						data2 <= "ZZZZZZZZZZZZZZZZ";
 						if ramrwop = '0' then
 							ram1en <= '0';		ram1we <= '1';		ram1oe <= '0';
 							data1 <= "ZZZZZZZZZZZZZZZZ";
@@ -90,6 +101,8 @@ begin
 							ram1en <= '0';		ram1we <= '1';		ram1oe <= '1';
 						else
 							ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
+							data1 <= "ZZZZZZZZZZZZZZZZ";
+							addr1 <= "ZZZZZZZZZZZZZZZZ";
 						end if;
 					elsif exe_rf_res(15) = '0' then
 						ram1en <= '1';		ram1oe <= '1';		ram1we <= '1';		addr1 <= "ZZZZZZZZZZZZZZZZ";
@@ -102,6 +115,8 @@ begin
 							ram2en <= '0';		ram2we <= '1';		ram2oe <= '1';
 						else
 							ram2en <= '1';			ram2we <= '1';		ram2oe <= '1';
+							data2 <= "ZZZZZZZZZZZZZZZZ";
+							addr2 <= "ZZZZZZZZZZZZZZZZ";
 						end if;
 					else
 						ram1en <= '1';		ram1oe <= '1';		ram1we <= '1';		addr1 <= "ZZZZZZZZZZZZZZZZ";
@@ -125,31 +140,23 @@ begin
 						end if;
 					elsif exe_rf_res (15) = '1' then
 						if ramrwop = '0' then
-							mem_lw <= data1;
+							data := data1;
 						elsif ramrwop = '1' then
-							if mem_sw_srcop = '0' then
-								data1 <= exe_rf_rx;
-							else
-								data1 <= exe_rf_ry;
-							end if;
+							data1 <= write_data;
 							ram1we <= '0';
 							addr1 <= exe_rf_res;
 						end if;
 					elsif exe_rf_res(15) = '0' then
 						if ramrwop = '0' then
-							mem_lw <= data2;
+							data := data2;
 						elsif ramrwop = '1' then
-							if mem_sw_srcop = '0' then
-								data2 <= exe_rf_rx;
-							else
-								data2 <= exe_rf_ry;
-							end if;
+							data2 <= write_data;
 							ram2we <= '0';
 							addr2 <= exe_rf_res;
 						end if;
 					else
 						ram1en <= '1';		ram1oe <= '1';		ram1we <= '1';		addr1 <= "ZZZZZZZZZZZZZZZZ";
-						ram2en <= '1';		ram2oe <= '1';		ram2we <= '1';	addr2 <= "ZZZZZZZZZZZZZZZZ";
+						ram2en <= '1';		ram2oe <= '1';		ram2we <= '1';		addr2 <= "ZZZZZZZZZZZZZZZZ";
 						uartwrn <= '1';	uartrdn <= '1';
 					end if;
 				when "10" =>
@@ -170,16 +177,16 @@ begin
 					if exe_rf_res(15 downto 2) = "10111111000000" then
 						if ramrwop = '0' then
 							if exe_rf_res(0) = '0' then
-								mem_lw <= data1;
+								data := data1;
 							else
-								mem_lw <= "00000000000000" & dataready & (tbre and tsre);
+								data := "00000000000000" & dataready & (tbre and tsre);
 							end if;
 						end if;
 					end if;
 					if_ins <= data2;
 				when others =>
 					if_ins <= "0000100000000000";
-					mem_lw <= "1111111111111111";
+					data := "1111111111111111";
 					addr1 <= "ZZZZZZZZZZZZZZZZ";
 					addr2 <= "ZZZZZZZZZZZZZZZZ";
 					ram1en <= '1';
@@ -191,6 +198,7 @@ begin
 					uartwrn <= '1';
 					uartrdn <= '1';
 			end case;
+			mem_lw <= data;
 			state <= state + 1;
 		end if;
 	end process;

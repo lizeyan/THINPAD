@@ -196,6 +196,7 @@ architecture Behavioral of NaiveCPU is
                RF_Rx_In : in STD_LOGIC_VECTOR(15 downto 0);
                RF_Ry_In : in STD_LOGIC_VECTOR(15 downto 0);
                RF_St_In : in STD_LOGIC_VECTOR(15 downto 0);
+					RF_swsrcop_in : in std_logic;
                
                RF_RamRWOp_In : in std_logic;
                RF_RegWrbOp_In : in std_logic_vector(1 downto 0);
@@ -209,7 +210,8 @@ architecture Behavioral of NaiveCPU is
                RF_St_Out : out STD_LOGIC_VECTOR(15 downto 0);
                
                RF_RamRWOp_Out : out std_logic;
-               RF_RegWrbOp_Out : out std_logic_vector(1 downto 0));
+               RF_RegWrbOp_Out : out std_logic_vector(1 downto 0);
+					RF_swsrcop_out : out std_logic);
     end component;
     
     -- Extend Module
@@ -266,6 +268,7 @@ architecture Behavioral of NaiveCPU is
                RF_BmuxOp_In : in std_logic_vector(2 downto 0);
                RF_RamRWOp_In : in std_logic;
                RF_RegWrbOp_In : in std_logic_vector(1 downto 0);
+					RF_swsrcop_in : in std_logic;
                
                RF_Imm_Out : out std_logic_vector(15 downto 0);
                RF_IH_Out : out std_logic_vector(15 downto 0);
@@ -282,7 +285,8 @@ architecture Behavioral of NaiveCPU is
                RF_AmuxOp_Out : out std_logic_vector(3 downto 0);
                RF_BmuxOp_Out : out std_logic_vector(2 downto 0);
                RF_RamRWOp_Out : out std_logic;
-               RF_RegWrbOp_Out : out std_logic_vector(1 downto 0));
+               RF_RegWrbOp_Out : out std_logic_vector(1 downto 0);
+					RF_swsrcop_out : out std_logic);
     end component;
     
     -- IF PC Adder
@@ -346,7 +350,8 @@ architecture Behavioral of NaiveCPU is
                EXE_RF_Ry : in STD_LOGIC_VECTOR(15 downto 0);
                MEM_LW : out STD_LOGIC_VECTOR(15 downto 0);
 					MEM_SW_SRCOP : in STD_LOGIC;
-               
+               --DEBUG
+					state_out: out std_logic_vector (3 downto 0);
                -- IF & MEM
                RamRWOp : in std_logic;  -- (1) for Ram1, (0) for Ram2; 0 for R, 1 for W
                
@@ -438,6 +443,9 @@ architecture Behavioral of NaiveCPU is
     signal clk_8 : STD_LOGIC;
     signal clk_16 : STD_LOGIC;
     signal clk_25 : STD_LOGIC;
+	 --DEBUG
+	 signal state_out : std_logic_vector (3 downto 0);
+	 
     -- Wire Signals
     -- IF
     signal ExDigitsOp : std_logic_vector(2 downto 0);
@@ -508,6 +516,7 @@ architecture Behavioral of NaiveCPU is
     signal ID_RF_SP : STD_LOGIC_VECTOR(15 downto 0);
     signal ID_RF_St : STD_LOGIC_VECTOR(15 downto 0);
     signal ID_RF_T : STD_LOGIC_VECTOR(15 downto 0);
+	 signal ID_RF_SWSRCOP: STD_LOGIC;
     -- EXE
     signal EXE_RF_Flags : STD_LOGIC_VECTOR(3 downto 0);  -- ZCSO
     signal EXE_RF_PC : STD_LOGIC_VECTOR(15 downto 0);
@@ -516,6 +525,7 @@ architecture Behavioral of NaiveCPU is
     signal EXE_RF_Rx : STD_LOGIC_VECTOR(15 downto 0);
     signal EXE_RF_Ry : STD_LOGIC_VECTOR(15 downto 0);
     signal EXE_RF_St : STD_LOGIC_VECTOR(15 downto 0);
+	 signal EXE_RF_SWSRCOP: STD_LOGIC;
     -- MEM
     signal MEM_RF_Flags : STD_LOGIC_VECTOR(3 downto 0);  -- ZCSO
     signal MEM_RF_LW : STD_LOGIC_VECTOR(15 downto 0);
@@ -665,7 +675,7 @@ begin
     
     process_Digit7LightRight: Digit7Light
     port map(
-        Data => PDTPC(3 downto 0),
+        Data => state_out,
         output => Digit7Right
     );
     
@@ -691,7 +701,7 @@ begin
         RF_Rx_In => ID_RF_Rx,
         RF_Ry_In => ID_RF_Ry,
         RF_St_In => ID_RF_St,
-        
+        rf_swsrcop_in => id_rf_swsrcop,
         RF_RamRWOp_In => ID_RF_RamRWOp,
         RF_RegWrbOp_In => ID_RF_RegWrbOp,
         
@@ -704,7 +714,8 @@ begin
         RF_St_Out => EXE_RF_St,
         
         RF_RamRWOp_OUT => EXE_RF_RamRWOp,
-        RF_RegWrbOp_OUT => EXE_RF_RegWrbOp
+        RF_RegWrbOp_OUT => EXE_RF_RegWrbOp,
+		  rf_swsrcop_out => exe_rf_swsrcop
     );
     
     Process_ExtendModule: ExtendModule
@@ -760,6 +771,7 @@ begin
         RF_BmuxOp_In => BmuxOp,
         RF_RamRWOp_In => RamRWOp,
         RF_RegWrbOp_In => RegWrbOp,
+		  RF_SWSRCOP_IN => swsrc, 
         
         RF_Imm_Out => ID_RF_Imm,
         RF_IH_Out => ID_RF_IH,
@@ -776,7 +788,8 @@ begin
         RF_AmuxOp_Out => ID_RF_AmuxOp,
         RF_BmuxOp_Out => ID_RF_BmuxOp,
         RF_RamRWOp_Out => ID_RF_RamRWOp,
-        RF_RegWrbOp_Out => ID_RF_RegWrbOp
+        RF_RegWrbOp_Out => ID_RF_RegWrbOp,
+		  RF_SWSRCOP_OUT => ID_rf_SWSRCOP
     );
     
     Process_IF_PCAdder: IF_PCAdder
@@ -826,7 +839,7 @@ begin
     port map (
         clk => clk,
         rst => rst,
-        mem_sw_srcop => swsrc, 
+        mem_sw_srcop => exe_rf_swsrcop, 
         
         PC_RF_PC => PC_RF_PC,
         --IF_Ins => IF_Ins,
@@ -852,7 +865,10 @@ begin
         UartWrn => UartWrn,
         DataReady => DataReady,
         Tbre => Tbre,
-        Tsre => Tsre
+        Tsre => Tsre,
+		  
+		  --DEBUG
+		  state_out => state_out
     );
     
     Process_PC_RF: PC_RF
@@ -869,7 +885,7 @@ begin
     
     Process_Registers: Registers
     port map (
-        clk => clk_4,
+        clk => clk,
         IF_RF_RX => IF_RF_ins(10 downto 8),
         IF_RF_RY => IF_RF_ins (7 downto 5),
         RegWrbAddr => MEM_RF_Rd,

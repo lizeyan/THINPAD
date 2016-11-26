@@ -43,6 +43,7 @@ entity ID_RF is
            RF_BmuxOp_In : in std_logic_vector(2 downto 0);
            RF_RamRWOp_In : in std_logic;
            RF_RegWrbOp_In : in std_logic_vector(1 downto 0);
+			  RF_swsrcop_in : in std_logic;
            
            RF_Imm_Out : out std_logic_vector(15 downto 0);
            RF_IH_Out : out std_logic_vector(15 downto 0);
@@ -59,11 +60,12 @@ entity ID_RF is
            RF_AmuxOp_Out : out std_logic_vector(3 downto 0);
            RF_BmuxOp_Out : out std_logic_vector(2 downto 0);
            RF_RamRWOp_Out : out std_logic;
-           RF_RegWrbOp_Out : out std_logic_vector(1 downto 0));
+           RF_RegWrbOp_Out : out std_logic_vector(1 downto 0);
+			  RF_swsrcop_out : out std_logic);
 end ID_RF;
 
 architecture Behavioral of ID_RF is
-    signal ramrw : std_logic := '1';
+    signal ramrw, swsrcop : std_logic := '1';
     signal regwrb : std_logic_vector(1 downto 0) := "11";
     signal bmux : std_logic_vector(2 downto 0) := "111";
     signal rd, alu, amux : std_logic_vector(3 downto 0) := "1111";
@@ -79,6 +81,7 @@ begin
     RF_SP_Out <= sp;
     RF_St_out <= st;
     RF_T_Out <= t;
+	 rf_swsrcop_out <= swsrcop;
     
     RF_AluOp_Out <= alu;
     RF_AmuxOp_Out <= amux;
@@ -125,6 +128,7 @@ begin
                 bmux <= RF_BmuxOp_In;
                 ramrw <= RF_RamRWOp_In;
                 regwrb <= RF_RegWrbOp_In;
+					 swsrcop <= rf_swsrcop_in;
             else
                 null;
             end if;
