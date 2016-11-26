@@ -73,7 +73,7 @@ begin
 			end if;
     end process;
 -- read
-	process(clk, ID_RX, ID_RY, RegWrbAddr, RegWrbData, data)
+	process(clk, IF_RF_RX, IF_RF_RY, RegWrbAddr, RegWrbData, data)
 	begin
 		ID_Rx <= data(conv_integer(IF_RF_RX));
 		ID_RY <= data(conv_integer(IF_RF_RY));
