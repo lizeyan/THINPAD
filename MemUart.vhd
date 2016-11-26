@@ -30,14 +30,10 @@ entity MemUart is
            -- 根据PC进行取指
            PC_RF_PC : in STD_LOGIC_VECTOR(15 downto 0); --取指令的地址
            IF_Ins : out STD_LOGIC_VECTOR(15 downto 0); --指令输出
-           
            -- MEM
-           -- 0写入rx,1写入ry。
            -- 地址是exe_rf_res.
-           MEM_SW_SrcOp : in STD_LOGIC;
+           MEM_SW_DATA : in STD_LOGIC_VECTOR (15 downto 0);
            EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
-           EXE_RF_Rx : in STD_LOGIC_VECTOR(15 downto 0);
-           EXE_RF_Ry : in STD_LOGIC_VECTOR(15 downto 0);
            MEM_LW : out STD_LOGIC_VECTOR(15 downto 0);
            
            -- IF & MEM
@@ -75,11 +71,6 @@ begin
 		if rst = '0' then
 			state <= "00";
 		elsif rising_edge (clk) then
-			if mem_sw_srcop = '0' then
-				write_data := exe_rf_rx;
-			else
-				write_data := exe_rf_ry;
-			end if;
 			case state is 
 				when "00" =>
 					if_ins <= "0000100000000000";
@@ -130,11 +121,7 @@ begin
 							uartwrn <= '1';
 							data1 <= "ZZZZZZZZZZZZZZZZ";
 						elsif ramrwop = '1' then
-							if mem_sw_srcop = '0' then
-								data1 <= exe_rf_rx;
-							else
-								data1 <= exe_rf_ry;
-							end if;
+							data1 <= mem_sw_data;
 							uartwrn <= '0';
 							uartrdn <= '1';
 						end if;
@@ -142,7 +129,7 @@ begin
 						if ramrwop = '0' then
 							data := data1;
 						elsif ramrwop = '1' then
-							data1 <= write_data;
+							data1 <= mem_sw_data;
 							ram1we <= '0';
 							addr1 <= exe_rf_res;
 						end if;
@@ -150,7 +137,7 @@ begin
 						if ramrwop = '0' then
 							data := data2;
 						elsif ramrwop = '1' then
-							data2 <= write_data;
+							data2 <= mem_sw_data;
 							ram2we <= '0';
 							addr2 <= exe_rf_res;
 						end if;

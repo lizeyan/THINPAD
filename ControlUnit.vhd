@@ -38,6 +38,7 @@ entity ControlUnit is
            RegWrbOp : out STD_LOGIC_VECTOR(1 downto 0); -- 寄存器写回数据的选择 -- 保存到ID_RF
            RXTOp : out STD_LOGIC_VECTOR(2 downto 0);
            SWSrc : out STD_LOGIC; -- 0 rx, 1 ry --保存到ID_RF
+			  SWMUXOP : out STD_LOGIC_VECTOR (2 downto 0);
            RamRWOp : out STD_LOGIC; -- 0 read, 1 write --保存到ID_RF
            BTBOP : out STD_LOGIC; -- is jumping ins(1) or not(0)
            
@@ -80,6 +81,33 @@ architecture Behavioral of ControlUnit is
 	 -- 111非法，表示None
 	 signal PC_SRC_IF, PC_SRC_ID, PC_SRC_EXE, PC_SRC_MEM, PC_SRC_WB: STD_LOGIC_VECTOR (2 downto 0) := "000";
 begin
+	-- SWMUXOP
+	process (if_rf_st, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
+		variable target : std_logic_vector (3 downto 0) := "1111";
+	begin
+		if if_rf_st(15 downto 11) = "11011" then
+			target := '0' & if_rf_st (7 downto 5);
+		elsif if_rf_st (15 downto 11) = "11010" then
+			target := '0' & if_rf_st (10 downto 8);
+		else
+			target := "1111";
+		end if;
+		if id_rf_rd = target and id_rf_rd /= "1111" then
+			if id_rf_op = "10011" or id_rf_op = "10010" then
+				swmuxop <= "010";
+			else
+				swmuxop <= "011";
+			end if;
+		elsif exe_rf_rd = target and exe_rf_rd /= "1111" then
+			if exe_rf_op = "10011" or exe_rf_op = "10010" then
+				swmuxop <= "000";
+			else
+				swmuxop <= "001";
+			end if;
+		else
+			swmuxop <= "111";
+		end if;
+	end process;
 	--BMUXOP
 	process (if_rf_st, id_rf_op, id_rf_rd, exe_rf_op, exe_rf_rd)
     -- BMuxOp
