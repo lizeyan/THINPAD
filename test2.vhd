@@ -42,6 +42,7 @@ ARCHITECTURE behavior OF test2 IS
     COMPONENT NaiveCPU
     PORT(
          clk_in : IN  std_logic;
+			clk_50 : in STD_LOGIC;
          rst : IN  std_logic;
          InputSW : IN  std_logic_vector(15 downto 0);
          Addr1 : OUT  std_logic_vector(15 downto 0);
@@ -72,6 +73,7 @@ ARCHITECTURE behavior OF test2 IS
 
    --Inputs
    signal clk_in : std_logic := '0';
+	signal clk_50 : std_logic := '0';
    signal rst : std_logic := '0';
    signal InputSW : std_logic_vector(15 downto 0) := (others => '0');
    signal DataReady : std_logic := '0';
@@ -109,6 +111,7 @@ BEGIN
 	-- Instantiate the Unit Under Test (UUT)
    uut: NaiveCPU PORT MAP (
           clk_in => clk_in,
+			 clk_50 => clk_50,
           rst => rst,
           InputSW => InputSW,
           Addr1 => Addr1,
@@ -148,21 +151,40 @@ BEGIN
    -- Stimulus process
    stim_proc: process
    begin		
-      -- 测试有关跳转的，你需要查看PC来确认是不是跳转，这里都是顺序会被执行的
+		rst <= '1';
 		wait for clk_in_period * 3;
-		inputsw <= "1101100011100000"; -- sw r0 r1 0
-		-- R0 1; PC 0
+		inputsw <= "0110100100000001"; -- li r1 1
 		wait for clk_in_period * 4;
-		inputsw <= "0110100100000000"; -- li r1 5
-		-- R0 1; PC 1
+		inputsw <= "0111101000100000"; -- move r2 r1
 		wait for clk_in_period * 4;
-		inputsw <= "1001100000100001"; --lw r0 r1 1
-		--这条指令应该会被取出流水线，不发生影响
+		inputsw <= "0011000100101100"; -- sll r1 r1 3
 		wait for clk_in_period * 4;
-		inputsw <= "11101001000000000"; -- jr r1
-		-- R1 1: R0 1: PC 3
+		inputsw <= "1110000101000111"; -- subu r1 r2 r1
 		wait for clk_in_period * 4;
-		wait;
+		inputsw <= "0111101000100000"; -- move r2 r1
+		wait for clk_in_period * 4;
+		inputsw <= "0011000100101100"; -- sll r1 r1 3
+		wait for clk_in_period * 4;
+		inputsw <= "1110000101000111"; -- subu r1 r2 r1
+		wait for clk_in_period * 4;
+		inputsw <= "0111101000100000"; -- move r2 r1
+		wait for clk_in_period * 4;
+		inputsw <= "0011000100101100"; -- sll r1 r1 3
+		wait for clk_in_period * 4;
+		inputsw <= "1110000101000111"; -- subu r1 r2 r1
+		wait for clk_in_period * 4;
+		inputsw <= "0111101000100000"; -- move r2 r1
+		wait for clk_in_period * 4;
+		inputsw <= "0011000100101100"; -- sll r1 r1 3
+		wait for clk_in_period * 4;
+		inputsw <= "1110000101000111"; -- subu r1 r2 r1
+		wait for clk_in_period * 4;
+		inputsw <= "0111101000100000"; -- move r2 r1
+		wait for clk_in_period * 4;
+		inputsw <= "0011000100101100"; -- sll r1 r1 3
+		wait for clk_in_period * 4;
+		inputsw <= "1110000101000111"; -- subu r1 r2 r1
+		wait for 1000 ns;
    end process;
 
 END;

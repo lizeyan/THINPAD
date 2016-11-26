@@ -65,19 +65,26 @@ begin
         ID_SP <= data(9);
         ID_T <= data(10);
 	 end process;
-
-    process(clk, RegWrbAddr, RegWrbData, IF_RF_RX, IF_RF_RY)
+-- write
+    process(clk)
     begin
         if rising_edge(clk) then
-				ID_Rx <= data(conv_integer(IF_RF_RX));
-				ID_RY <= data(conv_integer(IF_RF_RY));
             data(conv_integer(RegWrbAddr)) <= RegWrbData;
-				if regwrbaddr = ('0' & if_rf_rx) then
-					id_rx <= regwrbdata;
-				end if;
-				if regwrbaddr = ('0' & if_rf_ry) then
-					id_ry <= regwrbdata;
-				end if;
 			end if;
     end process;
+-- read
+	process(clk, IF_RF_RX, IF_RF_RY, RegWrbAddr, RegWrbData, data)
+	begin
+		ID_Rx <= data(conv_integer(IF_RF_RX));
+		ID_RY <= data(conv_integer(IF_RF_RY));
+		if regwrbaddr = ('0' & if_rf_rx) then
+			id_rx <= regwrbdata;
+		end if;
+		if regwrbaddr = ('0' & if_rf_ry) then
+			id_ry <= regwrbdata;
+		end if;
+		ID_IH <= data(8);
+		ID_SP <= data(9);
+		ID_T <= data(10);
+	end process;
 end Behavioral;
