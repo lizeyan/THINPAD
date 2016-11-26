@@ -522,7 +522,7 @@ begin
 				data_conflict (x => "1001", last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 			when "00010" => -- b
-				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
+				branch_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 			when "00100" => -- beqz
 				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 				branch_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
@@ -708,10 +708,18 @@ begin
 	-- 跳转指令比较目标和PC_RF_PC，相同就是PDT，否则就是IDPC
 	process (if_rf_st, idpc, pc_rf_pc)
 	begin
-		if idpc = pc_rf_pc then
-			pc_src_id <= "000";
-		else
+		if if_rf_st(15 downto 11) = "00010" and idpc /= pc_rf_pc then --b
 			pc_src_id <= "001";
+		elsif if_rf_st(15 downto 11) = "00100" and idpc /= pc_rf_pc then --beqz
+			pc_src_id <= "001";
+		elsif if_rf_st(15 downto 11) = "00101" and idpc /= pc_rf_pc then --bnez
+			pc_src_id <= "001";
+		elsif if_rf_st(15 downto 8) = "01100000" and idpc /= pc_rf_pc then --bteqz
+			pc_src_id <= "001";
+		elsif if_rf_st(15 downto 11) = "11101" and if_rf_st(7 downto 0) = "00000000" and idpc /= pc_rf_pc then --jr
+			pc_src_id <= "001";
+		else
+			pc_src_id <= "000";
 		end if;
 	end process;
 	-- pc_src_exe

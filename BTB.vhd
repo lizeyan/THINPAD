@@ -41,7 +41,7 @@ end BTB;
 --    
 --    signal status : std_logic_vector(1 downto 0) := "00";  -- wait until "11" to do the updating
 begin
-	PDTPC <= IF_RF_PC;
+	PDTPC <= PC_RF_PC + 1;
 --    process(clk, BTBOp, BTBTOp, IF_RF_OPC)
 --    begin
 --		if clk'event and clk='1' then
