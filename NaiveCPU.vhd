@@ -48,7 +48,8 @@ entity NaiveCPU is
            -- Digit 7 Lights
            Digit7Left : out STD_LOGIC_VECTOR(6 downto 0);
            DIgit7Right : out STD_LOGIC_VECTOR(6 downto 0);
-           
+           -- LED LIGHTS
+			  ledlights : out STD_LOGIC_VECTOR (15 downto 0);
            -- VGA
            Hs : out STD_LOGIC;
            Vs : out STD_LOGIC;
@@ -580,6 +581,12 @@ architecture Behavioral of NaiveCPU is
     signal SP : std_logic_vector(15 downto 0);
     signal T : std_logic_vector(15 downto 0);
 begin
+	ledlights(15 downto 3) <= "1111111111111";
+	ledlights(2) <= dataready;
+	ledlights(1) <= tbre;    
+	
+	ledlights(0) <= tsre;
+
 	 process (clk_50)
 	 begin
 		if rising_edge (clk_50) then

@@ -119,3 +119,22 @@ NET "Tsre" LOC = N9;
 NET "UartRdn" LOC = C14;
 NET "UartWrn" LOC = U5;
 NET "Vs" LOC = E6;
+
+# PlanAhead Generated physical constraints 
+
+NET "ledlights[15]" LOC = A14;
+NET "ledlights[14]" LOC = E13;
+NET "ledlights[13]" LOC = D13;
+NET "ledlights[12]" LOC = B13;
+NET "ledlights[11]" LOC = A13;
+NET "ledlights[10]" LOC = F12;
+NET "ledlights[9]" LOC = E12;
+NET "ledlights[8]" LOC = A12;
+NET "ledlights[7]" LOC = F11;
+NET "ledlights[6]" LOC = E11;
+NET "ledlights[5]" LOC = D11;
+NET "ledlights[4]" LOC = C11;
+NET "ledlights[3]" LOC = B11;
+NET "ledlights[2]" LOC = A11;
+NET "ledlights[1]" LOC = E10;
+NET "ledlights[0]" LOC = D10;

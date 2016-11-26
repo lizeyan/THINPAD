@@ -121,13 +121,12 @@ begin
 							uartwrn <= '1';
 							data1 <= "ZZZZZZZZZZZZZZZZ";
 						elsif ramrwop = '1' then
-							data1 <= mem_sw_data;
+							data1(7 downto 0) <= mem_sw_data (7 downto 0);
 							uartwrn <= '0';
-							uartrdn <= '1';
 						end if;
 					elsif exe_rf_res (15) = '1' then
 						if ramrwop = '0' then
-							data := data1;
+							data  := data1;
 						elsif ramrwop = '1' then
 							data1 <= mem_sw_data;
 							ram1we <= '0';
@@ -154,7 +153,6 @@ begin
 							uartrdn <= '0';
 						else
 							uartwrn <= '1';
-							uartrdn <= '1';
 						end if;
 					end if;
 					ram2en <= '0';	ram2oe <= '0';	ram2we <= '1';
@@ -164,7 +162,7 @@ begin
 					if exe_rf_res(15 downto 2) = "10111111000000" then
 						if ramrwop = '0' then
 							if exe_rf_res(0) = '0' then
-								data := data1;
+								data := "00000000" & data1(7 downto 0);
 							else
 								data := "00000000000000" & dataready & (tbre and tsre);
 							end if;
