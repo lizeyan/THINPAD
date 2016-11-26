@@ -449,7 +449,11 @@ architecture Behavioral of NaiveCPU is
                R7 : in std_logic_vector(15 downto 0);
                IH : in std_logic_vector(15 downto 0);
                SP : in std_logic_vector(15 downto 0);
-               T : in std_logic_vector(15 downto 0));
+               T : in std_logic_vector(15 downto 0);
+					
+					PC_RF_PC : in std_logic_vector(15 downto 0);
+					IF_RF_INS : in std_logic_vector(15 downto 0)
+					);
     end component;
     
     -- Clock Signals
@@ -581,11 +585,7 @@ architecture Behavioral of NaiveCPU is
     signal SP : std_logic_vector(15 downto 0);
     signal T : std_logic_vector(15 downto 0);
 begin
-	ledlights(15 downto 3) <= "1111111111111";
-	ledlights(2) <= dataready;
-	ledlights(1) <= tbre;    
-	
-	ledlights(0) <= tsre;
+	ledlights <= IF_RF_INS;
 
 	 process (clk_50)
 	 begin
@@ -881,7 +881,7 @@ begin
 		mem_sw_data => mem_sw_data
 	);
 	 
-    IF_Ins <= inputSW;
+--    IF_Ins <= inputSW;
     Process_MemUart: MemUart
     port map (
         clk => clk,
@@ -889,7 +889,7 @@ begin
 		  mem_sw_data => mem_sw_data,
         
         PC_RF_PC => PC_RF_PC,
-        --IF_Ins => IF_Ins,
+        IF_Ins => IF_Ins,
         
         EXE_RF_Res => EXE_RF_Res,
         MEM_LW => MEM_LW,
@@ -986,7 +986,10 @@ begin
         R7 => R7,
         IH => IH,
         SP => SP,
-        T => T
+        T => T,
+		  
+		  PC_RF_PC => PC_RF_PC,
+		  IF_RF_Ins => IF_RF_Ins
 --         R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T : in STD_LOGIC_VECTOR(15 downto 0)
     );
 end Behavioral;

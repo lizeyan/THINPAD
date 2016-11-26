@@ -221,9 +221,9 @@ begin
 					when "00100" => -- sllv
 						look_ahead_ry;
 					when "00000" => 
-						if if_rf_st(7 downto 5) = "0000" then --jr
+						if if_rf_st(7 downto 5) = "000" then --jr
 							bmuxop <= "111";
-						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+						elsif if_rf_st(7 downto 5) = "010" then --mfpc
 							bmuxop <= "110";
 						else
 							bmuxop <= "111";
@@ -394,9 +394,9 @@ begin
 					when "00100" => -- sllv
 						look_ahead_rx;
 					when "00000" => 
-						if if_rf_st(7 downto 5) = "0000" then --jr
+						if if_rf_st(7 downto 5) = "000" then --jr
 							amuxop <= "1111";
-						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+						elsif if_rf_st(7 downto 5) = "010" then --mfpc
 							amuxop <= "0001";
 						else
 							amuxop <= "1111";
@@ -627,10 +627,10 @@ begin
 						data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 						normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 					when "00000" => 
-						if if_rf_st(7 downto 5) = "0000" then --jr
+						if if_rf_st(7 downto 5) = "000" then --jr
 							data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 								branch_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
-						elsif if_rf_st(7 downto 5) = "0100" then --mfpc
+						elsif if_rf_st(7 downto 5) = "010" then --mfpc
 								normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 						else
 								if_rfop <= "00";

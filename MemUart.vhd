@@ -73,7 +73,6 @@ begin
 		elsif rising_edge (clk) then
 			case state is 
 				when "00" =>
-					if_ins <= "0000100000000000";
 					if exe_rf_res(15 downto 2) = "10111111000000" then
 						ram1en <= '1';		ram1oe <= '1';		ram1we <= '1';		addr1 <= "ZZZZZZZZZZZZZZZZ";
 						ram2en <= '1';		ram2oe <= '1';		ram2we <= '1';		addr2 <= "ZZZZZZZZZZZZZZZZ";

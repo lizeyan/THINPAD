@@ -42,7 +42,11 @@ entity VGAController is
            R7 : in std_logic_vector(15 downto 0);
            IH : in std_logic_vector(15 downto 0);
            SP : in std_logic_vector(15 downto 0);
-           T : in std_logic_vector(15 downto 0));
+           T : in std_logic_vector(15 downto 0);
+			  
+			  PC_RF_PC : in std_logic_vector(15 downto 0);
+			  IF_RF_INS : in std_logic_vector(15 downto 0)
+			  );
 end VGAController;
 
 architecture Behavioral of VGAController is
@@ -279,6 +283,24 @@ begin
                             tempR <= (others => '0');
                         end if;
                         tempG <= print_register(T);
+						  elsif y>=270 and y<280 then
+								if x>=20 and x<30 then
+									tempR <= half;
+								elsif (x>=10 and x<20) or (x>=30 and x<50) then
+									tempR <= (others => '1');
+								else
+									tempR <= (others => '0');
+								end if;
+								tempG <= print_register(PC_RF_PC);
+							elsif y>=290 and y<300 then
+								if x>=30 and x<50 then
+									tempR <= half;
+								elsif x>=10 and x<30 then
+									tempR <= (others => '1');
+								else
+									tempR <= (others => '0');
+								end if;
+								tempG <= print_register(IF_RF_Ins);
                     else
                         tempR <= (others => '0');
                         tempG <= (others => '0');
