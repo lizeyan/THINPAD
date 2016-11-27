@@ -83,7 +83,7 @@ begin
     process (exe_rf_res, ramrwop, mem_en, ramdata, uartdata)
     begin
         if exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '0' and mem_en = '1' then
-            mem_lw <= uartdata;
+            mem_lw <= "00000000" & uartdata(7 downto 0);
         elsif ramrwop = '0' and mem_en = '1' then
             mem_lw <= ramdata;
         else
