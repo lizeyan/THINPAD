@@ -66,128 +66,91 @@ begin
 	state_out <= "00" & state;
 	
 	process (clk, rst)
-		variable write_data : std_logic_vector (15 downto 0) := "0000000000000000";
 	begin
 		if rst = '0' then
 			state <= "00";
 		elsif rising_edge (clk) then
-			case state is 
-				when "00" =>
-					if exe_rf_res(15 downto 2) = "10111111000000" then
-						ram1en <= '1';		ram1oe <= '1';		ram1we <= '1';		addr1 <= "ZZZZZZZZZZZZZZZZ";
-						ram2en <= '1';		ram2oe <= '1';		ram2we <= '1';		addr2 <= "ZZZZZZZZZZZZZZZZ";
+			if exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '0' then --read uart
+				ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
+				case state is
+					when "00" =>
 						uartwrn <= '1';	uartrdn <= '1';
 						data1 <= "ZZZZZZZZZZZZZZZZ";
-						data2 <= "ZZZZZZZZZZZZZZZZ";
-					elsif exe_rf_res (15) = '1' then
-						ram2en <= '1';		ram2oe <= '1';		ram2we <= '1'; 	addr2 <= "ZZZZZZZZZZZZZZZZ";
-						uartwrn <= '1';	uartrdn <= '1';
-						data2 <= "ZZZZZZZZZZZZZZZZ";
-						if ramrwop = '0' then
-							ram1en <= '0';		ram1we <= '1';		ram1oe <= '0';
-							data1 <= "ZZZZZZZZZZZZZZZZ";
-							addr1 <= exe_rf_res;
-						elsif ramrwop = '1' then
-							ram1en <= '0';		ram1we <= '1';		ram1oe <= '1';
-						else
-							ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
-							data1 <= "ZZZZZZZZZZZZZZZZ";
-							addr1 <= "ZZZZZZZZZZZZZZZZ";
-						end if;
-					elsif exe_rf_res(15) = '0' then
-						ram1en <= '1';		ram1oe <= '1';		ram1we <= '1';		addr1 <= "ZZZZZZZZZZZZZZZZ";
-						uartwrn <= '1';	uartrdn <= '1';
-						if ramrwop = '0' then
-							ram2en <= '0';		ram2we <= '1';		ram2oe <= '0';
-							data2 <= "ZZZZZZZZZZZZZZZZ";
-							addr2 <= exe_rf_res;
-						elsif ramrwop = '1' then
-							ram2en <= '0';		ram2we <= '1';		ram2oe <= '1';
-						else
-							ram2en <= '1';			ram2we <= '1';		ram2oe <= '1';
-							data2 <= "ZZZZZZZZZZZZZZZZ";
-							addr2 <= "ZZZZZZZZZZZZZZZZ";
-						end if;
-					else
-						ram1en <= '1';		ram1oe <= '1';		ram1we <= '1';		addr1 <= "ZZZZZZZZZZZZZZZZ";
-						ram2en <= '1';		ram2oe <= '1';		ram2we <= '1';	addr2 <= "ZZZZZZZZZZZZZZZZ";
-						uartwrn <= '1';	uartrdn <= '1';
-					end if;
-				when "01" =>
-					if exe_rf_res(15 downto 2) = "10111111000000" then
-						if ramrwop = '0' then
-							uartrdn <= '1';
-							uartwrn <= '1';
-							data1 <= "ZZZZZZZZZZZZZZZZ";
-						elsif ramrwop = '1' then
-							data1(7 downto 0) <= mem_sw_data (7 downto 0);
-							data1(15 downto 8) <= "ZZZZZZZZ";
-							uartwrn <= '0';
-							uartrdn <= '1';
-						end if;
-					elsif exe_rf_res (15) = '1' then
-						if ramrwop = '0' then
-							data  := data1;
-						elsif ramrwop = '1' then
-							data1 <= mem_sw_data;
-							ram1we <= '0';
-							addr1 <= exe_rf_res;
-						end if;
-					elsif exe_rf_res(15) = '0' then
-						if ramrwop = '0' then
-							data := data2;
-						elsif ramrwop = '1' then
-							data2 <= mem_sw_data;
-							ram2we <= '0';
-							addr2 <= exe_rf_res;
-						end if;
-					else
-						ram1en <= '1';		ram1oe <= '1';		ram1we <= '1';		addr1 <= "ZZZZZZZZZZZZZZZZ";
-						ram2en <= '1';		ram2oe <= '1';		ram2we <= '1';		addr2 <= "ZZZZZZZZZZZZZZZZ";
-						uartwrn <= '1';	uartrdn <= '1';
-					end if;
-				when "10" =>
-					ram1en <= '1';		ram1oe <= '1';		ram1we <= '1';
-					if exe_rf_res(15 downto 2) = "10111111000000" then
-						if ramrwop = '0' then
-							uartwrn <= '1';
+					when "01" =>
+						if dataready = '1' then
 							uartrdn <= '0';
-							data1 <= "ZZZZZZZZZZZZZZZZ";
-						else
-							uartwrn <= '1';
-							uartrdn <= '1';
+						end if;
+					when "10" =>
+						data := data1;
+					when others => null;
+				end case;
+			elsif exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '1' and exe_rf_res(0) = '0' then --write uart
+				ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
+				case state is
+					when "00" =>
+						if tbre = '1' and tsre = '1' then
+							uartwrn <= '0';	uartrdn <= '1';
 							data1(7 downto 0) <= mem_sw_data (7 downto 0);
-							data1(15 downto 8) <= "ZZZZZZZZ";
 						end if;
-					end if;
-					ram2en <= '0';	ram2oe <= '0';	ram2we <= '1';
-					data2 <= "ZZZZZZZZZZZZZZZZ";
-					addr2 <= pc_rf_pc;
-				when "11" =>
-					if exe_rf_res(15 downto 2) = "10111111000000" then
-						if ramrwop = '0' then
-							if exe_rf_res(0) = '0' then
-								data := "00000000" & data1(7 downto 0);
-							else
-								data := "00000000000000" & dataready & (tbre and tsre);
-							end if;
-						end if;
-					end if;
-					if_ins <= data2;
-				when others =>
-					if_ins <= "0000100000000000";
-					data := "1111111111111111";
-					addr1 <= "ZZZZZZZZZZZZZZZZ";
-					addr2 <= "ZZZZZZZZZZZZZZZZ";
-					ram1en <= '1';
-					ram1we <= '1';
-					ram1oe <= '1';
-					ram2en <= '1';
-					ram2oe <= '1';
-					ram2we <= '1';
-					uartwrn <= '1';
-					uartrdn <= '1';
-			end case;
+					when "01" =>
+						uartwrn <= '1';
+					when others => null;
+				end case;
+			elsif exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '1' then
+				data := "00000000000000" & dataready & (tbre and tsre);
+			elsif exe_rf_res(15) = '1' and ramrwop = '0' then --read ram1
+				uartwrn <= '1';	uartrdn <= '1';
+				case state is
+					when "00" =>
+						ram1en <= '0';		ram1we <= '1';		ram1oe <= '0';
+						addr1 <= exe_rf_res;
+						data1 <= "ZZZZZZZZZZZZZZZZ";
+					when "01" =>
+						data := data1;
+					when others => null;
+				end case;
+			elsif exe_rf_res(15) = '1' and ramrwop = '1' then --write ram1
+				uartwrn <= '1';	uartrdn <= '1';
+				case state is
+					when "00" =>
+						ram1en <= '0';		ram1we <= '1';		ram1oe <= '1';
+					when "01" =>
+						ram1we <= '0';
+						addr1 <= exe_rf_res;
+						data1 <= mem_sw_data;
+					when others => null;
+				end case;
+			elsif exe_rf_res(15) = '0' and ramrwop = '0' then --read ram2
+				case state is
+					when "00" =>
+						ram2en <= '0';		ram2we <= '1';		ram2oe <= '0';
+						addr2 <= exe_rf_res;
+						data2 <= "ZZZZZZZZZZZZZZZZ";
+					when "01" =>
+						data := data2;
+					when others => null;
+				end case;
+			elsif exe_rf_res(15) = '0' and ramrwop = '1' then --write ram2
+				case state is
+					when "00" =>
+						ram2en <= '0';		ram2we <= '1';		ram2oe <= '1';
+					when "01" =>
+						ram2we <= '0';
+						addr2 <= exe_rf_res;
+						data2 <= mem_sw_data;
+					when others => null;
+				end case;
+			else
+				
+			end if;
+			-- read ram2 for IF
+			if state = "10" then
+				ram2en <= '0';		ram2we <= '1';		ram2oe <= '0';
+				addr2 <= pc_rf_pc;
+				data2 <= "ZZZZZZZZZZZZZZZZ";
+			elsif state = "11" then
+				if_ins <= data2;
+			end if;
 			mem_lw <= data;
 			state <= state + 1;
 		end if;

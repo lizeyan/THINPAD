@@ -32,7 +32,6 @@ use IEEE.STD_LOGIC_1164.ALL;
 entity testmemuart is
     Port ( inputsw : in  STD_LOGIC_VECTOR (15 downto 0);
            clk : in  STD_LOGIC;
-			  mode : in STD_LOGIC;
            dataready : in  STD_LOGIC;
            tbre : in  STD_LOGIC;
            tsre : in  STD_LOGIC;
@@ -80,14 +79,37 @@ architecture Behavioral of testmemuart is
                Tbre : in STD_LOGIC;
                Tsre : in STD_LOGIC);
     end component;
-	 
+	 component ClockModule
+        Port ( clk_in : in STD_LOGIC;
+               --��Ƶ
+					clk: out STD_LOGIC;
+               clk_2 : out STD_LOGIC;
+               clk_4 : out STD_LOGIC;
+               clk_8 : out STD_LOGIC;
+               clk_16 : out STD_LOGIC);
+    end component;
 	 signal lw : std_logic_vector (15 downto 0);
+	 signal clk_origin: STD_LOGIC;
+    signal clk_2 : STD_LOGIC;
+    signal clk_4 : STD_LOGIC;
+    signal clk_8 : STD_LOGIC;
+    signal clk_16 : STD_LOGIC;
+    signal clk_25 : STD_LOGIC;
 begin
 	ledlights( 7 downto 0) <= lw(7 downto 0);
 	ledlights(8) <= dataready;
 	ledlights(9) <= tbre;
 	ledlights(10) <= tsre;
 	ledlights(11) <= '0';
+    Process_ClockModule: ClockModule
+    port map (
+        clk_in => clk,
+        clk => clk_origin,
+        clk_2 => clk_2,
+        clk_4 => clk_4,
+        clk_8 => clk_8,
+        clk_16 => clk_16
+    );
 	process_memuart : MEMUART
 	port map (
 		clk => clk,
@@ -97,7 +119,7 @@ begin
 		exe_rf_res => "1011111100000000",
 		mem_lw => lw,
 		state_out => ledlights (15 downto 12),
-		ramrwop => mode,
+		ramrwop => inputsw (15),
 		addr1 => addr1,
 		data1 => data1,
 		ram1en => ram1en,
