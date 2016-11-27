@@ -633,7 +633,7 @@ begin
     
     Process_BTB: BTB
     port map (
-        clk => clk_4,
+        clk => clk_16,
         PDTPC => PDTPC,
         
         BTBOp => BTBOp,
@@ -719,7 +719,7 @@ begin
     
     Process_EXE_RF: EXE_RF
     port map (
-        clk => clk_4,
+        clk => clk_16,
         EXE_RFOp => EXE_RFOp,
         
         RF_Flags_In => AluFlags,
@@ -782,7 +782,7 @@ begin
     
     Process_ID_RF: ID_RF
     port map (
-        clk => clk_4,
+        clk => clk_16,
         ID_RFOp => ID_RFOp,
         
         RF_Imm_In => IF_RF_IMM,
@@ -832,7 +832,7 @@ begin
     
     Process_IF_RF: IF_RF
     port map (
-        clk => clk_4,
+        clk => clk_16,
         IF_RFOp => IF_RFOp,
         
         RF_Imm_In => IF_Imm,
@@ -848,7 +848,7 @@ begin
     
     Process_MEM_RF: MEM_RF
     port map (
-        clk => clk_4,
+        clk => clk_16,
         MEM_RFOp => MEM_RFOp,
         RF_Flags_In => EXE_RF_Flags,
         RF_LW_In => MEM_LW,
@@ -869,7 +869,7 @@ begin
 	 
 	 Process_MEM_SWMUX : MEM_SW_MUX
 	 port map (
-		clk => clk_4,
+		clk => clk_16,
 		mem_sw_muxop => exe_rf_swmuxop,
 		mem_sw_srcop => exe_rf_swsrcop,
 		lw_in => mem_rf_lw,
@@ -884,7 +884,7 @@ begin
 --    IF_Ins <= inputSW;
     Process_MemUart: MemUart
     port map (
-        clk => clk,
+        clk => clk_4,
         rst => rst,
 		  mem_sw_data => mem_sw_data,
         
@@ -918,7 +918,7 @@ begin
     
     Process_PC_RF: PC_RF
     port map (
-        clk => clk_4,
+        clk => clk_16,
         PC_RFOp => PC_RFOp,
         PC_RFWE => PC_RFWE,
         IDPC => IDPC,
@@ -930,7 +930,7 @@ begin
     
     Process_Registers: Registers
     port map (
-        clk => clk,
+        clk => clk_4,
         IF_RF_RX => IF_RF_ins(10 downto 8),
         IF_RF_RY => IF_RF_ins (7 downto 5),
         RegWrbAddr => MEM_RF_Rd,

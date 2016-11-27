@@ -121,7 +121,9 @@ begin
 							data1 <= "ZZZZZZZZZZZZZZZZ";
 						elsif ramrwop = '1' then
 							data1(7 downto 0) <= mem_sw_data (7 downto 0);
+							data1(15 downto 8) <= "ZZZZZZZZ";
 							uartwrn <= '0';
+							uartrdn <= '1';
 						end if;
 					elsif exe_rf_res (15) = '1' then
 						if ramrwop = '0' then
@@ -150,8 +152,12 @@ begin
 						if ramrwop = '0' then
 							uartwrn <= '1';
 							uartrdn <= '0';
+							data1 <= "ZZZZZZZZZZZZZZZZ";
 						else
 							uartwrn <= '1';
+							uartrdn <= '1';
+							data1(7 downto 0) <= mem_sw_data (7 downto 0);
+							data1(15 downto 8) <= "ZZZZZZZZ";
 						end if;
 					end if;
 					ram2en <= '0';	ram2oe <= '0';	ram2we <= '1';
