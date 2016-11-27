@@ -460,7 +460,9 @@ architecture Behavioral of NaiveCPU is
                T : in std_logic_vector(15 downto 0);
 					
 					PC_RF_PC : in std_logic_vector(15 downto 0);
-					IF_RF_INS : in std_logic_vector(15 downto 0)
+					IF_RF_INS : in std_logic_vector(15 downto 0);
+                    EXE_RF_Res : in std_logic_vector(15 downto 0);
+                    MEM_RF_Res : in std_logic_vector(15 downto 0)
 					);
     end component;
     
@@ -666,8 +668,8 @@ begin
 	 
     Process_ClockModule_SOURCE: ClockModule
     port map (
-        clk_in => clk_50,
-        clk_4 => clk_source
+        clk_in => clk_in,
+        clk => clk_source
     );
 	 
     Process_ClockModule: ClockModule
@@ -911,7 +913,7 @@ begin
 		mem_sw_data => mem_sw_data
 	);
 	 
---    IF_Ins <= inputSW;
+    IF_Ins <= inputSW;
     Process_MemUart: MemUart
     port map (
         clk => clk,
@@ -919,7 +921,7 @@ begin
 		  mem_sw_data => mem_sw_data,
         
         PC_RF_PC => PC_RF_PC,
-        IF_Ins => IF_Ins,
+--        IF_Ins => IF_Ins,
         
         EXE_RF_Res => EXE_RF_Res,
         MEM_LW => MEM_LW,
@@ -1020,7 +1022,10 @@ begin
         T => T,
 		  
 		  PC_RF_PC => PC_RF_PC,
-		  IF_RF_Ins => IF_RF_Ins
+		  IF_RF_Ins => IF_RF_Ins,
+          
+          EXE_RF_Res => EXE_RF_Res,
+          MEM_RF_Res => MEM_RF_Res
 --         R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T : in STD_LOGIC_VECTOR(15 downto 0)
     );
 end Behavioral;

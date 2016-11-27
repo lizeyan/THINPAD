@@ -43,10 +43,14 @@ entity VGAController is
            IH : in std_logic_vector(15 downto 0);
            SP : in std_logic_vector(15 downto 0);
            T : in std_logic_vector(15 downto 0);
-			  
-			  PC_RF_PC : in std_logic_vector(15 downto 0);
-			  IF_RF_INS : in std_logic_vector(15 downto 0)
-			  );
+           
+           PC_RF_PC : in std_logic_vector(15 downto 0);
+           IF_RF_INS : in std_logic_vector(15 downto 0);
+           
+           MEM_RF_Res : in std_logic_vector(15 downto 0);
+           EXE_RF_Res : in std_logic_vector(15 downto 0)
+           
+           );
 end VGAController;
 
 architecture Behavioral of VGAController is
@@ -283,24 +287,44 @@ begin
                             tempR <= (others => '0');
                         end if;
                         tempG <= print_register(T);
-						  elsif y>=270 and y<280 then
-								if x>=20 and x<30 then
-									tempR <= half;
-								elsif (x>=10 and x<20) or (x>=30 and x<50) then
-									tempR <= (others => '1');
-								else
-									tempR <= (others => '0');
-								end if;
-								tempG <= print_register(PC_RF_PC);
-							elsif y>=290 and y<300 then
-								if x>=30 and x<50 then
-									tempR <= half;
-								elsif x>=10 and x<30 then
-									tempR <= (others => '1');
-								else
-									tempR <= (others => '0');
-								end if;
-								tempG <= print_register(IF_RF_Ins);
+					elsif y>=270 and y<280 then
+                        if x>=20 and x<30 then
+                            tempR <= half;
+                        elsif (x>=10 and x<20) or (x>=30 and x<50) then
+                            tempR <= (others => '1');
+                        else
+                            tempR <= (others => '0');
+                        end if;
+                        tempG <= print_register(PC_RF_PC);
+                    elsif y>=290 and y<300 then
+                        if x>=30 and x<50 then
+                            tempR <= half;
+                        elsif x>=10 and x<30 then
+                            tempR <= (others => '1');
+                        else
+                            tempR <= (others => '0');
+                        end if;
+                        tempG <= print_register(IF_RF_Ins);
+                    elsif y>=310 and y<320 then
+                        if x>=30 and x<40 then
+                            tempR <= half;
+                        elsif (x>=10 and x<30) or (x>=40 and x<50) then
+                            tempR <= (others => '1');
+                        else
+                            tempR <= (others => '0');
+                        end if;
+                        tempG <= print_register(EXE_RF_Res);
+                    elsif y>=330 and y<340 then
+                        if x>=40 and x<50 then
+                            tempR <= half;
+                        elsif x>=10 and x<40 then
+                            tempR <= (others => '1');
+                        else
+                            tempR <= (others => '0');
+                        end if;
+                        tempG <= print_register(MEM_RF_Res);
+                    
+                    
                     else
                         tempR <= (others => '0');
                         tempG <= (others => '0');
