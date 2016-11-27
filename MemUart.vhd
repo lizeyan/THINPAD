@@ -62,7 +62,7 @@ end MemUart;
 architecture Behavioral of MemUart is
 	shared variable state: STD_LOGIC_VECTOR (1 downto 0) := "11";
     shared variable sent : boolean := false;
-    signal readdata, ramdata, uartdata: std_logic_vector (15 downto 0);
+    signal readdata, ramdata, uartdata, readins: std_logic_vector (15 downto 0);
 begin
     --update state
     process (clk, rst)
@@ -75,6 +75,7 @@ begin
                 ramdata <= readdata;
             elsif state = "11" then
                 uartdata <= readdata;
+                if_ins <= readins;
             end if;
         end if;
     end process;
@@ -118,20 +119,28 @@ begin
             end case;
         elsif exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '1' and exe_rf_res(0) = '0' and mem_en = '1' then -- write uart                                                                                                                                                       
             ram1en <= '1';  ram1we <= '1';  ram1oe <= '1';  uartrdn <= '1';
-            case state is
-                when "01" =>
-                    if tbre = '1' and tsre = '1' and (not sent)then
-                        uartwrn <= '0';
-                        data1 <= "00000000" & mem_sw_data (7 downto 0);
-                        sent := true;
-                    else
-                        uartwrn <= '1'; data1 <= "ZZZZZZZZZZZZZZZZ";
-                    end if;                                                
-                when others =>
-                    sent := false;
-                    uartwrn <= '1';
-                    data1 <= "ZZZZZZZZZZZZZZZZ";
-            end case;
+            if state = "00" then
+                uartwrn <= clk;
+                data1 <= "00000000" & mem_sw_data (7 downto 0);
+            else
+                uartwrn <= '1';
+                data1 <= "ZZZZZZZZZZZZZZZZ";
+            end if;
+--          
+--            case state is
+--                when "00" =>
+--                    if tbre = '1' and tsre = '1' and (not sent)then
+--                        uartwrn <= '0';
+--                        data1 <= "00000000" & mem_sw_data (7 downto 0);
+--                        sent := true;
+--                    else
+--                        uartwrn <= '1'; data1 <= "ZZZZZZZZZZZZZZZZ";
+--                    end if;                                                
+--                when others =>
+--                    sent := false;
+--                    uartwrn <= '1';
+--                    data1 <= "ZZZZZZZZZZZZZZZZ";
+--            end case;
         elsif exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '1' and mem_en = '1' then
 				uartrdn <= '1';
 				uartwrn <= '1';
@@ -208,11 +217,9 @@ begin
             ram2en <= '0';		ram2we <= '1';		ram2oe <= '0';
             addr2 <= pc_rf_pc;
             data2 <= "ZZZZZZZZZZZZZZZZ";
-        elsif state = "11" then
-            ram2en <= '0';		ram2we <= '1';		ram2oe <= '0';
-            addr2 <= pc_rf_pc;
-            data2 <= "ZZZZZZZZZZZZZZZZ";
-            if_ins <= data2;
+            readins <= data2;
+        else
+            ram2en <= '1';		ram2we <= '1';		ram2oe <= '1';
         end if;
     end process;
     

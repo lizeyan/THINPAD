@@ -668,8 +668,8 @@ begin
 	 
     Process_ClockModule_SOURCE: ClockModule
     port map (
-        clk_in => clk_in,
-        clk => clk_source
+        clk_in => clk_50,
+        clk_1k => clk_source
     );
 	 
     Process_ClockModule: ClockModule
@@ -913,7 +913,7 @@ begin
 		mem_sw_data => mem_sw_data
 	);
 	 
-    IF_Ins <= inputSW;
+--    IF_Ins <= inputSW;
     Process_MemUart: MemUart
     port map (
         clk => clk,
@@ -921,7 +921,7 @@ begin
 		  mem_sw_data => mem_sw_data,
         
         PC_RF_PC => PC_RF_PC,
---        IF_Ins => IF_Ins,
+        IF_Ins => IF_Ins,
         
         EXE_RF_Res => EXE_RF_Res,
         MEM_LW => MEM_LW,

@@ -156,19 +156,14 @@ BEGIN
    begin		
       rst <= '1';
       wait for clk_in_period * 3;
-      inputsw <= "0110111010111111";
+      inputsw <= "0001000000000111";
       wait for clk_in_period * 4;
-      inputsw <= "0011011011000000";
+      inputsw <= "0000100000000000";
       wait for clk_in_period * 4;
-      inputsw <= "0100111000010000";
+      inputsw <= "0000100000000000";
       wait for clk_in_period * 4;
-      inputsw <= "1001111010100101"; --LW R6 R5 5
-      wait for clk_in_period * 4;
-      inputsw <= "1001111001000010"; --LW R6 R2 2
-      wait for clk_in_period * 4;
-      wait for clk_in_period * 4;
-      wait for clk_in_period * 4;
-      wait for clk_in_period * 4;
+      inputsw <= "0000100000000000";
+      
       wait;
    end process;
 
