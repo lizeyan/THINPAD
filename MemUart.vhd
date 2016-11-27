@@ -62,6 +62,7 @@ end MemUart;
 architecture Behavioral of MemUart is
 	signal state: STD_LOGIC_VECTOR (1 downto 0) := "00";
 	shared variable data : std_logic_vector (15 downto 0) := "0000000000000000";
+	shared variable nready : std_logic := '1';
 begin
 	state_out <= "00" & state;
 	
@@ -72,24 +73,33 @@ begin
 		elsif rising_edge (clk) then
 			if exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '0' then --read uart
 				ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
+				uartwrn <= '1';
 				case state is
 					when "00" =>
-						uartwrn <= '1';	uartrdn <= '1';
+						nready := '1';
 						data1 <= "ZZZZZZZZZZZZZZZZ";
 					when "01" =>
 						if dataready = '1' then
-							uartrdn <= '0';
+							nready := '0';
 						end if;
 					when "10" =>
-						data := data1;
+						if nready = '0' then
+							data := data1;
+							nready := '1';
+						end if;
+					when "11" =>
+						nready := '1';
+						data1 <= "ZZZZZZZZZZZZZZZZ";
 					when others => null;
 				end case;
+				uartrdn <= nready;
 			elsif exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '1' and exe_rf_res(0) = '0' then --write uart
 				ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
+				uartrdn <= '1';
 				case state is
 					when "00" =>
 						if tbre = '1' and tsre = '1' then
-							uartwrn <= '0';	uartrdn <= '1';
+							uartwrn <= '0';
 							data1(7 downto 0) <= mem_sw_data (7 downto 0);
 						end if;
 					when "01" =>
@@ -97,6 +107,12 @@ begin
 					when others => null;
 				end case;
 			elsif exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '1' then
+				uartrdn <= '1';
+				uartwrn <= '1';
+				ram1en <= '1';
+				ram1we <= '1';
+				ram1oe <= '1';
+				data1 <= "ZZZZZZZZZZZZZZZZ";
 				data := "00000000000000" & dataready & (tbre and tsre);
 			elsif exe_rf_res(15) = '1' and ramrwop = '0' then --read ram1
 				uartwrn <= '1';	uartrdn <= '1';
@@ -107,7 +123,9 @@ begin
 						data1 <= "ZZZZZZZZZZZZZZZZ";
 					when "01" =>
 						data := data1;
-					when others => null;
+					when others =>
+						data1 <= "ZZZZZZZZZZZZZZZZ";
+						ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
 				end case;
 			elsif exe_rf_res(15) = '1' and ramrwop = '1' then --write ram1
 				uartwrn <= '1';	uartrdn <= '1';
@@ -118,7 +136,9 @@ begin
 						ram1we <= '0';
 						addr1 <= exe_rf_res;
 						data1 <= mem_sw_data;
-					when others => null;
+					when others =>
+						data1 <= "ZZZZZZZZZZZZZZZZ";
+						ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
 				end case;
 			elsif exe_rf_res(15) = '0' and ramrwop = '0' then --read ram2
 				case state is
@@ -141,7 +161,8 @@ begin
 					when others => null;
 				end case;
 			else
-				
+				uartrdn <= '1';
+                
 			end if;
 			-- read ram2 for IF
 			if state = "10" then

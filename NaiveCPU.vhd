@@ -118,7 +118,8 @@ architecture Behavioral of NaiveCPU is
                clk_2 : out STD_LOGIC;
                clk_4 : out STD_LOGIC;
                clk_8 : out STD_LOGIC;
-               clk_16 : out STD_LOGIC);
+               clk_16 : out STD_LOGIC;
+               clk_1k : out std_logic);
     end component;
     
     -- Control Unit
@@ -558,7 +559,8 @@ architecture Behavioral of NaiveCPU is
     signal MEM_RF_Res : STD_LOGIC_VECTOR(15 downto 0);
     signal MEM_RF_PC : STD_LOGIC_VECTOR(15 downto 0);
     signal MEM_RF_St : STD_LOGIC_VECTOR(15 downto 0);  
-    
+    -- UART
+    signal UartWrnTMP, UartRdnTMP : STD_LOGIC;
     -- control signal in RF
     -- ID
     signal ID_RF_ALUOp : std_logic_vector(3 downto 0);
@@ -584,15 +586,22 @@ architecture Behavioral of NaiveCPU is
     signal IH : std_logic_vector(15 downto 0);
     signal SP : std_logic_vector(15 downto 0);
     signal T : std_logic_vector(15 downto 0);
+    signal clk_source : STD_LOGIC;
 begin
-	 ledlights <= IF_RF_INS;
+    ledlights(2) <= dataready;
+    ledlights(1) <= tbre;
+    ledlights(0) <= tsre;
+    ledlights(13 downto 3) <= "00000000000";
+    ledlights(15 downto 14) <= uartwrntmp & uartrdntmp;
 
-	 process (clk_50)
-	 begin
+    UartWrn <= UartWrnTMP;
+    UartRdn <= UartRdnTMP;
+	process (clk_50)
+	begin
 		if rising_edge (clk_50) then
 			clk_25 <= not clk_25;
 		end if;
-	 end process;
+	end process;
     Process_ALU: ALU
     port map (
         AluOp => ID_RF_AluOp,
@@ -633,7 +642,7 @@ begin
     
     Process_BTB: BTB
     port map (
-        clk => clk_16,
+        clk => clk_4,
         PDTPC => PDTPC,
         
         BTBOp => BTBOp,
@@ -644,10 +653,16 @@ begin
         IF_RF_PC => IF_RF_PC,
         PC_RF_PC => PC_RF_PC
     );
-    
-    Process_ClockModule: ClockModule
+	 
+    Process_ClockModule_SOURCE: ClockModule
     port map (
         clk_in => clk_50,
+        clk_1k => clk_source
+    );
+	 
+    Process_ClockModule: ClockModule
+    port map (
+        clk_in => clk_source,
         clk => clk,
         clk_2 => clk_2,
         clk_4 => clk_4,
@@ -719,7 +734,7 @@ begin
     
     Process_EXE_RF: EXE_RF
     port map (
-        clk => clk_16,
+        clk => clk_4,
         EXE_RFOp => EXE_RFOp,
         
         RF_Flags_In => AluFlags,
@@ -782,7 +797,7 @@ begin
     
     Process_ID_RF: ID_RF
     port map (
-        clk => clk_16,
+        clk => clk_4,
         ID_RFOp => ID_RFOp,
         
         RF_Imm_In => IF_RF_IMM,
@@ -832,7 +847,7 @@ begin
     
     Process_IF_RF: IF_RF
     port map (
-        clk => clk_16,
+        clk => clk_4,
         IF_RFOp => IF_RFOp,
         
         RF_Imm_In => IF_Imm,
@@ -848,7 +863,7 @@ begin
     
     Process_MEM_RF: MEM_RF
     port map (
-        clk => clk_16,
+        clk => clk_4,
         MEM_RFOp => MEM_RFOp,
         RF_Flags_In => EXE_RF_Flags,
         RF_LW_In => MEM_LW,
@@ -869,7 +884,7 @@ begin
 	 
 	 Process_MEM_SWMUX : MEM_SW_MUX
 	 port map (
-		clk => clk_16,
+		clk => clk_4,
 		mem_sw_muxop => exe_rf_swmuxop,
 		mem_sw_srcop => exe_rf_swsrcop,
 		lw_in => mem_rf_lw,
@@ -884,7 +899,7 @@ begin
 --    IF_Ins <= inputSW;
     Process_MemUart: MemUart
     port map (
-        clk => clk_4,
+        clk => clk,
         rst => rst,
 		  mem_sw_data => mem_sw_data,
         
@@ -906,8 +921,8 @@ begin
         Ram2EN => Ram2EN,
         Ram2OE => Ram2OE,
         Ram2WE => Ram2WE,
-        UartRdn => UartRdn,
-        UartWrn => UartWrn,
+        UartRdn => UartRdnTMP,
+        UartWrn => UartWrnTMP,
         DataReady => DataReady,
         Tbre => Tbre,
         Tsre => Tsre,
@@ -918,7 +933,7 @@ begin
     
     Process_PC_RF: PC_RF
     port map (
-        clk => clk_16,
+        clk => clk_4,
         PC_RFOp => PC_RFOp,
         PC_RFWE => PC_RFWE,
         IDPC => IDPC,
@@ -930,7 +945,7 @@ begin
     
     Process_Registers: Registers
     port map (
-        clk => clk_4,
+        clk => clk,
         IF_RF_RX => IF_RF_ins(10 downto 8),
         IF_RF_RY => IF_RF_ins (7 downto 5),
         RegWrbAddr => MEM_RF_Rd,

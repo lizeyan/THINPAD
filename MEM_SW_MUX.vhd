@@ -57,7 +57,7 @@ begin
 		end if;
 	end process;
 
-	process (mem_sw_muxop, mem_sw_srcop)
+	process (mem_sw_muxop, mem_sw_srcop, lw, res, mem_rf_lw, mem_rf_res, exe_rf_rx, exe_rf_ry)
 	begin
 		case mem_sw_muxop is
 			when "000" => mem_sw_data <= lw;

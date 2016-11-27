@@ -29,7 +29,8 @@ entity ClockModule is
            clk_2 : out STD_LOGIC;
            clk_4 : out STD_LOGIC;
            clk_8 : out STD_LOGIC;
-           clk_16 : out STD_LOGIC);
+           clk_16 : out STD_LOGIC;
+			  clk_1k : out STD_LOGIC);
 end ClockModule;
 
 architecture Behavioral of ClockModule is
@@ -37,12 +38,26 @@ architecture Behavioral of ClockModule is
     signal tempClk4 : STD_LOGIC := '0';
     signal tempClk8 : STD_LOGIC := '0';
     signal tempClk16 : STD_LOGIC := '0';
+	 signal tempClk1k : STD_LOGIC := '0';
+	 
+	 signal cnt : INTEGER range 0 to 65535*2 := 0;
 begin
     clk <= clk_in;
     clk_2 <= tempClk2;
     clk_4 <= tempClk4;
     clk_8 <= tempClk8;
     clk_16 <= tempClk16;
+	 clk_1k <= tempclk1k;
+	 process(clk_in)
+	 begin
+		if clk_in'event and clk_in='1' then
+            cnt <= cnt + 1;
+            if cnt=100000 then
+                cnt <= 0;
+                tempClk1k <= not tempClk1k;
+            end if;
+        end if;
+    end process;
     
     process(clk_in)
     begin
