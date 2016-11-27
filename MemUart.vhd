@@ -61,11 +61,11 @@ end MemUart;
 
 architecture Behavioral of MemUart is
 	signal state: STD_LOGIC_VECTOR (1 downto 0) := "00";
-	shared variable data : std_logic_vector (15 downto 0) := "0000000000000000";
+	signal data : std_logic_vector (15 downto 0) := "0000000000000000";
 	shared variable nready : std_logic := '1';
 begin
 	state_out <= "00" & state;
-	mem_lw <= data;
+    mem_lw <= data;
 	process (clk, rst)
 	begin
 		if rst = '0' then
@@ -84,7 +84,7 @@ begin
 						end if;
 					when "10" =>
 						if nready = '0' then
-							data := data1;
+							data <= data1;
 							nready := '1';
 						end if;
 					when "11" =>
@@ -113,7 +113,7 @@ begin
 				ram1we <= '1';
 				ram1oe <= '1';
 				data1 <= "ZZZZZZZZZZZZZZZZ";
-				data := "00000000000000" & dataready & (tbre and tsre);
+				data <= "00000000000000" & dataready & (tbre and tsre);
 			elsif exe_rf_res(15) = '1' and ramrwop = '0' and mem_en = '1'  then --read ram1
 				uartwrn <= '1';	uartrdn <= '1';
 				case state is
@@ -122,10 +122,9 @@ begin
 						addr1 <= exe_rf_res;
 						data1 <= "ZZZZZZZZZZZZZZZZ";
 					when "01" =>
-						data := data1;
-					when others =>
---						data1 <= "ZZZZZZZZZZZZZZZZ";
-						ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
+                        addr1 <= exe_rf_res;
+						data <= data1;
+					when others => null;
 				end case;
 			elsif exe_rf_res(15) = '1' and ramrwop = '1' and mem_en = '1'  then --write ram1  
 				uartwrn <= '1';	uartrdn <= '1';
@@ -147,7 +146,8 @@ begin
 						addr2 <= exe_rf_res;
 						data2 <= "ZZZZZZZZZZZZZZZZ";
 					when "01" =>
-						data := data2;
+                        addr2 <= exe_rf_res;
+						data <= data2;
 					when others => null;
 				end case;
 			elsif exe_rf_res(15) = '0' and ramrwop = '1' and mem_en = '1' then --write ram2
@@ -161,9 +161,8 @@ begin
 					when others => null;
 				end case;
 			else
-                data1 <= "ZZZZZZZZZZZZZZZZ";
-                data2 <= "ZZZZZZZZZZZZZZZZ";
 				uartrdn <= '1';
+                
 			end if;
 			-- read ram2 for IF
 			if state = "10" then
