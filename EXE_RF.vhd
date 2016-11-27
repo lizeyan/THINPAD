@@ -38,6 +38,7 @@ entity EXE_RF is
            RF_RegWrbOp_In : in std_logic_vector(1 downto 0);
 			  RF_swsrcop_in : in std_logic;
 			  RF_SWMUXOP_in : in std_logic_vector (2 downto 0);
+              rf_memen_in : std_logic;
            
            RF_Flags_Out : out STD_LOGIC_VECTOR(3 downto 0);
            RF_PC_Out : out STD_LOGIC_VECTOR(15 downto 0);
@@ -49,12 +50,13 @@ entity EXE_RF is
            
            RF_RamRWOp_Out : out std_logic;
            RF_RegWrbOp_Out : out std_logic_vector(1 downto 0);
+           rf_memen_out : out std_logic;
 			  RF_SWMUXOP_out : out std_logic_vector (2 downto 0);
 			  RF_swsrcop_out : out std_logic);
 end EXE_RF;
 
  architecture Behavioral of EXE_RF is
-    signal ramrw,swsrcop : std_logic := '1';
+    signal ramrw,swsrcop,memen : std_logic := '1';
     signal regwrb: std_logic_vector(1 downto 0) := "11";
 	 signal swmuxop : std_logic_vector (2 downto 0) := "111";
 	signal flags, rd : STD_LOGIC_VECTOR (3 downto 0) := "1111"; --ozsc
@@ -72,6 +74,7 @@ begin
     RF_RegWrbOp_Out <= regwrb;
 	rf_swsrcop_out <= swsrcop;
     RF_SWMUXOP_out <= swmuxop;
+    rf_memen_out <= memen;
 	process (clk)
 	begin
 		if rising_edge (clk) then
@@ -87,7 +90,7 @@ begin
 				  regwrb <= RF_RegWrbOp_In;
               swsrcop <= rf_swsrcop_in;
 				  swmuxop <= RF_SWMUXOP_in;
-                    
+                    memen <= rf_memen_in;
 			elsif exe_rfop = "11" then
 					flags <= "0000";
 					pc <= "0000000000000000"; -- ?

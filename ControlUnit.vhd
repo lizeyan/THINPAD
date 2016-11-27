@@ -40,6 +40,7 @@ entity ControlUnit is
            SWSrc : out STD_LOGIC; -- 0 rx, 1 ry --保存到ID_RF
 			  SWMUXOP : out STD_LOGIC_VECTOR (2 downto 0);
            RamRWOp : out STD_LOGIC; -- 0 read, 1 write --保存到ID_RF
+           memen : out std_logic;
            BTBOP : out STD_LOGIC; -- is jumping ins(1) or not(0)
            
            -- ENABLE  complex
@@ -821,12 +822,14 @@ begin
 					regwrbop <= "00";
 					ramrwop <= '0';
 					swsrc <= '0';
+                    memen <= '0';
             when "01000" => -- addiu3
 					aluop <= "0000";
 					dir := "001";
 					regwrbop <= "00";
 					ramrwop <= '0';
 					swsrc <= '0';
+                    memen <= '0';
             when "01100" => --addsp, bteqz, mtsp
 					ramrwop <= '0';
 					swsrc <= '0';
@@ -835,18 +838,22 @@ begin
 							aluop <= "0000";
 							dir := "010";
 							regwrbop <= "00";
+                            memen <= '0';
 						when "000" => --btnez
 							aluop <= "0110";
 							dir := "111";
 							regwrbop <= "11";
+                            memen <= '0';
 						when "100" => --mtsp
 							aluop <= "0011";
 							dir := "010";
 							regwrbop <= "00";
+                            memen <= '0';
 						when others =>
 							aluop <= "1111";
 							dir := "111";
 							regwrbop <= "11";
+                            memen <= '0';
 					end case;
             when "00000" => --addsp3
 					ramrwop <= '0';
@@ -854,51 +861,60 @@ begin
 					aluop <= "0000";
 					dir := "000";
 					regwrbop <= "00";
+                    memen <= '0';
             when "00010" => -- b
 					ramrwop <= '0';
 					swsrc <= '0';
 					aluop <= "0000";
 					dir := "111";
 					regwrbop <= "11";
+                    memen <= '0';
             when "00100" => -- beqz
 					ramrwop <= '0';
 					swsrc <= '0';
 					aluop <= "0110";
 					dir := "111";
 					regwrbop <= "11";
+                    memen <= '0';
             when "00101" => -- bnez
 					ramrwop <= '0';
 					swsrc <= '0';
 					aluop <= "0110";
 					dir := "111";
 					regwrbop <= "11";
+                    memen <= '0';
             when "01110" => -- cmpi
 					ramrwop <= '0';
 					swsrc <= '0';
 					aluop <= "0110";
 					dir := "100";
 					regwrbop <= "10";
+                    memen <= '0';
             when "01101" => -- li
 					ramrwop <= '0';
 					swsrc <= '0';
 					aluop <= "0011";
 					dir := "000";
 					regwrbop <= "00";
+                    memen <= '0';
             when "10011" => -- lw
 					ramrwop <= '0';
 					swsrc <= '0';
 					aluop <= "0000";
 					dir := "001";
 					regwrbop <= "01";
+                    memen <= '1';
             when "10010" => -- lw_sp
 					ramrwop <= '0';
 					swsrc <= '0';
 					aluop <= "0000";
 					dir := "000";
 					regwrbop <= "01";
+                    memen <= '1';
             when "00110" => 
 					ramrwop <= '0';
 					swsrc <= '0';
+                    memen <= '0';
 					case if_rf_st(1 downto 0) is
 					when "00" => --sll
 						aluop <= "0111";
@@ -919,27 +935,32 @@ begin
 					aluop <= "0001";
 					dir := "100";
 					regwrbop <= "00";
+                    memen <= '0';
 				when "01111" => --move
 					ramrwop <= '0';
 					swsrc <= '0';
 					aluop <= "0011";
 					dir := "000";
 					regwrbop <= "00";
+                    memen <= '0';
             when "11011" => -- sw
 					aluop <= "0000";
 					dir := "111";
 					ramrwop <= '1';
 					swsrc <= '1';
 					regwrbop <= "11";
+                    memen <= '1';
             when "11010" => -- swsp
 					aluop <= "0000";
 					dir := "111";
 					ramrwop <= '1';
 					swsrc <= '0';
 					regwrbop <= "11";
+                    memen <= '1';
 				when "11100" => 
 					ramrwop <= '0';
 					swsrc <= '0';
+                    memen <= '0';
 					case if_rf_st(1 downto 0) is
 						when "01" => --addu
 							aluop <= "0000";
@@ -957,6 +978,7 @@ begin
 				when "11101" =>
 					ramrwop <= '0';
 					swsrc <= '0';
+                    memen <= '0';
 					case if_rf_st(4 downto 0) is
 						when "01100" => -- and
 							aluop <= "0011";
@@ -987,6 +1009,7 @@ begin
 					ramrwop <= '0';
 					swsrc <= '0';
 					aluop <= "0010";
+                    memen <= '0';
 					case if_rf_st(0) is
 						when '0' => -- mfih
 							dir := "000";
@@ -1004,6 +1027,7 @@ begin
 					aluop <= "1111";
 					dir := "111";
 					regwrbop <= "11";
+                    memen <= '0';
 			end case;
 			dirop <= dir;
 	end process;

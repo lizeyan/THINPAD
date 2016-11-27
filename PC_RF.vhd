@@ -29,6 +29,7 @@ use IEEE.std_logic_unsigned.all;
 -- 100 ²»ÄÜÐ´
 entity PC_RF is
     Port ( clk : in std_logic;
+           rst: in std_logic;
            PC_RFOp : in std_logic_vector(2 downto 0);
            PC_RFWE: in std_logic;
            IDPC : in std_logic_vector(15 downto 0);
@@ -39,15 +40,17 @@ entity PC_RF is
 end PC_RF;
 
 architecture Behavioral of PC_RF is
-    constant DelInt : std_logic_vector(15 downto 0) := (others => '1');  -- Address of DelInt
+    constant DelInt : std_logic_vector(15 downto 0) := "0000000000000101";  -- Address of DelInt
     
     signal pc : std_logic_vector(15 downto 0) := (others => '0');
 begin
     RF_PC_Out <= pc;
 
-    process(clk)
+    process(clk, rst)
     begin
-        if clk'event and clk='1' and pc_rfwe = '1' then
+        if rst = '0' then
+            pc <= "0000000000000000";
+        elsif clk'event and clk='1' and pc_rfwe = '1' then
             case PC_RFOp is
                 when "000" => 
                     pc <= PDTPC;

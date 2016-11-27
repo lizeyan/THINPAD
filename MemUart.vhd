@@ -25,7 +25,7 @@ use IEEE.std_logic_unsigned.all;
 entity MemUart is
     Port ( clk : in STD_LOGIC; --这里需要高速时钟
            rst : in STD_LOGIC; -- 刷新状态机 rst='0'重置State为00
-           
+           mem_en : in std_logic;
            -- IF
            -- 根据PC进行取指
            PC_RF_PC : in STD_LOGIC_VECTOR(15 downto 0); --取指令的地址
@@ -65,13 +65,13 @@ architecture Behavioral of MemUart is
 	shared variable nready : std_logic := '1';
 begin
 	state_out <= "00" & state;
-	
+	mem_lw <= data;
 	process (clk, rst)
 	begin
 		if rst = '0' then
 			state <= "00";
 		elsif rising_edge (clk) then
-			if exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '0' then --read uart
+			if exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '0' and mem_en = '1'  then --read uart
 				ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
 				uartwrn <= '1';
 				case state is
@@ -93,7 +93,7 @@ begin
 					when others => null;
 				end case;
 				uartrdn <= nready;
-			elsif exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '1' and exe_rf_res(0) = '0' then --write uart
+			elsif exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '1' and exe_rf_res(0) = '0' and mem_en = '1'  then --write uart
 				ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
 				uartrdn <= '1';
 				case state is
@@ -106,7 +106,7 @@ begin
 						uartwrn <= '1';
 					when others => null;
 				end case;
-			elsif exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '1' then
+			elsif exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '1' and mem_en = '1' then
 				uartrdn <= '1';
 				uartwrn <= '1';
 				ram1en <= '1';
@@ -114,7 +114,7 @@ begin
 				ram1oe <= '1';
 				data1 <= "ZZZZZZZZZZZZZZZZ";
 				data := "00000000000000" & dataready & (tbre and tsre);
-			elsif exe_rf_res(15) = '1' and ramrwop = '0' then --read ram1
+			elsif exe_rf_res(15) = '1' and ramrwop = '0' and mem_en = '1'  then --read ram1
 				uartwrn <= '1';	uartrdn <= '1';
 				case state is
 					when "00" =>
@@ -124,10 +124,10 @@ begin
 					when "01" =>
 						data := data1;
 					when others =>
-						data1 <= "ZZZZZZZZZZZZZZZZ";
+--						data1 <= "ZZZZZZZZZZZZZZZZ";
 						ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
 				end case;
-			elsif exe_rf_res(15) = '1' and ramrwop = '1' then --write ram1
+			elsif exe_rf_res(15) = '1' and ramrwop = '1' and mem_en = '1'  then --write ram1  
 				uartwrn <= '1';	uartrdn <= '1';
 				case state is
 					when "00" =>
@@ -140,7 +140,7 @@ begin
 						data1 <= "ZZZZZZZZZZZZZZZZ";
 						ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
 				end case;
-			elsif exe_rf_res(15) = '0' and ramrwop = '0' then --read ram2
+			elsif exe_rf_res(15) = '0' and ramrwop = '0' and mem_en = '1'  then --read ram2
 				case state is
 					when "00" =>
 						ram2en <= '0';		ram2we <= '1';		ram2oe <= '0';
@@ -150,7 +150,7 @@ begin
 						data := data2;
 					when others => null;
 				end case;
-			elsif exe_rf_res(15) = '0' and ramrwop = '1' then --write ram2
+			elsif exe_rf_res(15) = '0' and ramrwop = '1' and mem_en = '1' then --write ram2
 				case state is
 					when "00" =>
 						ram2en <= '0';		ram2we <= '1';		ram2oe <= '1';
@@ -161,8 +161,9 @@ begin
 					when others => null;
 				end case;
 			else
+                data1 <= "ZZZZZZZZZZZZZZZZ";
+                data2 <= "ZZZZZZZZZZZZZZZZ";
 				uartrdn <= '1';
-                
 			end if;
 			-- read ram2 for IF
 			if state = "10" then
@@ -172,7 +173,6 @@ begin
 			elsif state = "11" then
 				if_ins <= data2;
 			end if;
-			mem_lw <= data;
 			state <= state + 1;
 		end if;
 	end process;
