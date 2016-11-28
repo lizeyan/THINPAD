@@ -372,12 +372,15 @@ architecture Behavioral of NaiveCPU is
                -- MEM
 					MEM_SW_DATA : in STD_LOGIC_VECTOR (15 downto 0);
                EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
+               alures : in std_logic_vector (15 downto 0);
                MEM_LW : out STD_LOGIC_VECTOR(15 downto 0);
                --DEBUG
 					state_out: out std_logic_vector (3 downto 0);
                -- IF & MEM
                mem_en : in std_logic;
+               mem_en_lh : in std_logic;
                RamRWOp : in std_logic;  -- (1) for Ram1, (0) for Ram2; 0 for R, 1 for W
+               ramrwop_lh : in std_logic;
                
                Addr1 : out STD_LOGIC_VECTOR(15 downto 0);
                Addr2 : out STD_LOGIC_VECTOR(15 downto 0);
@@ -916,16 +919,19 @@ begin
     port map (
         clk => clk,
         rst => '1',
-		  mem_sw_data => mem_sw_data,
+        mem_sw_data => mem_sw_data,
         
         PC_RF_PC => PC_RF_PC,
         IF_Ins => IF_Ins,
         
         EXE_RF_Res => EXE_RF_Res,
+        alures => alures,
         MEM_LW => MEM_LW,
         
         RamRWOp => EXE_RF_RamRWOp,
+        ramrwop_lh => id_rf_ramrwop,
         mem_en => exe_rf_memen,
+        mem_en_lh => id_rf_memen,
         Addr1 => Addr1,
         Addr2 => Addr2,
         Data1 => Data1,
