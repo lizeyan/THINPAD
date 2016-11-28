@@ -57,12 +57,15 @@ architecture Behavioral of testmemuart is
                -- MEM
 					MEM_SW_DATA : in STD_LOGIC_VECTOR (15 downto 0);
                EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
+               ALURes : in STD_LOGIC_VECTOR(15 downto 0);
                MEM_LW : out STD_LOGIC_VECTOR(15 downto 0);
                --DEBUG
 					state_out: out std_logic_vector (3 downto 0);
                -- IF & MEM
                RamRWOp : in std_logic;  -- (1) for Ram1, (0) for Ram2; 0 for R, 1 for W
-               
+               RamRWOp_lh : in std_logic;  -- (1) for Ram1, (0) for Ram2; 0 for R, 1 for W
+               mem_en : in std_logic;
+               mem_en_lh : in std_logic;
                Addr1 : out STD_LOGIC_VECTOR(15 downto 0);
                Addr2 : out STD_LOGIC_VECTOR(15 downto 0);
                Data1 : inout STD_LOGIC_VECTOR(15 downto 0);  -- low 8 digits for Uart
@@ -112,14 +115,18 @@ begin
     );
 	process_memuart : MEMUART
 	port map (
-		clk => clk,
+		clk => clk_4,
 		rst => '1',
 		pc_rf_pc => "0000000000000000",
 		mem_sw_data => inputsw,
+        alures => "1011111100000000",
 		exe_rf_res => "1011111100000000",
 		mem_lw => lw,
+        mem_en => '1',
+        mem_en_lh => '1',
 		state_out => ledlights (15 downto 12),
 		ramrwop => inputsw (15),
+        ramrwop_lh => inputsw (15),
 		addr1 => addr1,
 		data1 => data1,
 		ram1en => ram1en,
