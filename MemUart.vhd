@@ -68,7 +68,7 @@ architecture Behavioral of MemUart is
 	shared variable nready : std_logic := '1';
 begin
 	state_out <= "00" & state;
-	mem_lw <= "00000000" & data(7 downto 0);
+	mem_lw <= data;
 	process (clk, rst)
 	begin
 		if rst = '0' then
@@ -88,7 +88,7 @@ begin
 						end if;
 					when "10" =>
 						if nready = '0' then
-							data := data1;
+							data := "00000000" & data1(7 downto 0);
 							nready := '1';
 						end if;
 					when "11" =>
@@ -157,6 +157,8 @@ begin
 						data2 <= "ZZZZZZZZZZZZZZZZ";
 					when "01" =>
 						data := data2;
+                        ram2en <= '1';  ram2we <= '1';  ram2oe <= '1';
+                        data2 <= "ZZZZZZZZZZZZZZZZ";
 					when others => null;
 				end case;
 			elsif (state /= "00" and exe_rf_res(15) = '0' and ramrwop = '1' and mem_en = '1' ) 
