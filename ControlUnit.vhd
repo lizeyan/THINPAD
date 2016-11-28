@@ -429,7 +429,7 @@ begin
     process(if_rf_st)
         variable op : std_logic_vector(4 downto 0) := "00000";
     begin
-			op := if_rf_st (15 downto 11);
+        op := if_rf_st (15 downto 11);
         if(op="00010" or op="00100" or op="00101") then -- b, beqz, bnez
             btbop <= '1';
         elsif(if_rf_st(15 downto 8)="01100000") then -- bteqz
