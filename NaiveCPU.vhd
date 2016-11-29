@@ -110,6 +110,7 @@ architecture Behavioral of NaiveCPU is
                PC_RF_PC : in std_logic_vector(15 downto 0));
     end component;
     
+
     -- Clock Module
     component ClockModule
         Port ( clk_in : in STD_LOGIC;
@@ -470,6 +471,7 @@ architecture Behavioral of NaiveCPU is
     -- Clock Signals
 	 -- ��clockmodule���ɣ����ӵ�����component
 	 signal clk: STD_LOGIC;
+     signal clkfx: std_logic;
     signal clk_2 : STD_LOGIC;
     signal clk_4 : STD_LOGIC;
     signal clk_8 : STD_LOGIC;
@@ -666,16 +668,10 @@ begin
         IF_RF_PC => IF_RF_PC,
         PC_RF_PC => PC_RF_PC
     );
-	 
-    Process_ClockModule_SOURCE: ClockModule
-    port map (
-        clk_in => clk_50,
-        clk => clk_source
-    );
-	 
+
     Process_ClockModule: ClockModule
     port map (
-        clk_in => clk_source,
+        clk_in => clk_50,
         clk => clk,
         clk_2 => clk_2,
         clk_4 => clk_4,

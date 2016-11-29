@@ -47,8 +47,8 @@ entity VGAController is
            PC_RF_PC : in std_logic_vector(15 downto 0);
            IF_RF_INS : in std_logic_vector(15 downto 0);
            
-           MEM_RF_Res : in std_logic_vector(15 downto 0);
-           EXE_RF_Res : in std_logic_vector(15 downto 0)
+           MEM_RF_Res : in std_logic_vector(15 downto 0) := "0000000000000000";
+           EXE_RF_Res : in std_logic_vector(15 downto 0) := "0000000000000000"
            
            );
 end VGAController;

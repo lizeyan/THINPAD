@@ -26,7 +26,7 @@ entity Registers is
     Port ( clk : in STD_LOGIC;
            IF_RF_RX : in STD_LOGIC_VECTOR(2 downto 0);
            IF_RF_RY : in STD_LOGIC_VECTOR(2 downto 0);
-           RegWrbAddr : in STD_LOGIC_VECTOR(3 downto 0);
+           RegWrbAddr : in STD_LOGIC_VECTOR(3 downto 0); --这里应该从旁路来拿阿
            RegWrbData : in STD_LOGIC_VECTOR(15 downto 0);
            
            ID_Rx : out STD_LOGIC_VECTOR(15 downto 0);
