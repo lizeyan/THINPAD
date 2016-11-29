@@ -109,11 +109,13 @@ begin
                             uartwrn <= '0';
                             data1 (7 downto 0) <= mem_sw_data(7 downto 0);
                         end if;
-                    when others => null;
+                    when others =>
+                        uartwrn <= '1';
                 end case;
 			elsif (state /= '0' and exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '1' and mem_en = '1') 
                 or (state = '0' and alures(15 downto 2) = "10111111000000" and ramrwop_lh = '0' and alures(0) = '1' and mem_en_lh = '1') then
 				uartrdn <= '1';
+                uartwrn <= '1';
 				ram1en <= '1';
 				ram1we <= '1';
 				ram1oe <= '1';
@@ -122,6 +124,7 @@ begin
 			elsif (state /= '0' and exe_rf_res(15) = '1' and ramrwop = '0' and mem_en = '1')
                 or (state = '0' and alures(15) = '1' and ramrwop_lh = '0' and mem_en_lh = '1') then --read ram1
 				uartrdn <= '1';
+                uartwrn <= '1';
 				case state is
 					when '0' =>
 						ram1en <= '0';		ram1we <= '1';		ram1oe <= '0';
@@ -136,6 +139,7 @@ begin
 			elsif (state /= '0' and exe_rf_res(15) = '1' and ramrwop = '1' and mem_en = '1')
                 or (state = '0' and alures(15) = '1' and ramrwop_lh = '1' and mem_en_lh = '1') then --write ram1  
 				uartrdn <= '1';
+                uartwrn <= '1';
 				case state is
 					when '0' =>
 						ram1en <= '0';		ram1we <= '1';		ram1oe <= '1';
@@ -147,10 +151,14 @@ begin
 				end case;
             elsif (state /= '0' and exe_rf_res(15) = '0' and ramrwop = '0' and mem_en = '1')
                 or (state = '0' and alures(15) = '0' and ramrwop_lh = '0' and mem_en_lh = '1') then --read ram2
+				uartrdn <= '1';
+                uartwrn <= '1';
                     if state = '1' then
                         data <= data2;
                     end if;
 			else
+				uartrdn <= '1';
+                uartwrn <= '1';
                 data1 <= "ZZZZZZZZZZZZZZZZ";
 				uartrdn <= '1';
 			end if;
