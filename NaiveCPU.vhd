@@ -142,7 +142,7 @@ architecture Behavioral of NaiveCPU is
                RegWrbOp : out std_logic_vector(1 downto 0); -- �Ĵ���д�����ݵ�ѡ�� -- ���浽ID_RF
                RXTOp : out std_logic_vector(2 downto 0);
                SWSrc : out std_logic; -- 0 rx, 1 ry --���浽ID_RF
-                SWMUXOP : out std_logic_vector (2 downto 0);
+               SWMUXOP : out std_logic_vector (2 downto 0);
                memen : out std_logic;
                
                -- ENABLE  complex
@@ -417,6 +417,9 @@ architecture Behavioral of NaiveCPU is
     -- �Ĵ�����
     component Registers
         Port ( clk : in STD_LOGIC;
+               ID_RFOp : in std_logic_vector (1 downto 0);
+               IF_RX    : in STD_LOGIC_VECTOR (2 downto 0);
+               IF_RY    : in STD_LOGIC_VECTOR (2 downto 0);
                IF_RF_RX : in STD_LOGIC_VECTOR(2 downto 0);
                IF_RF_RY : in STD_LOGIC_VECTOR(2 downto 0);
                RegWrbData : in STD_LOGIC_VECTOR(15 downto 0);
@@ -963,10 +966,13 @@ begin
     
     Process_Registers: Registers
     port map (
-        clk => clk,
-        IF_RF_RX => IF_RF_ins(10 downto 8),
-        IF_RF_RY => IF_RF_ins (7 downto 5),
-        RegWrbAddr => MEM_RF_Rd,
+        clk => clk_2,
+        ID_RFOp => ID_RFOp,
+        IF_RX => IF_ins(10 downto 8),
+        IF_RY => IF_ins (7 downto 5),
+        IF_RF_Rx => IF_RF_INS (10 downto 8),
+        IF_RF_RY => IF_RF_INS (7 downto 5),
+        RegWrbAddr => EXE_RF_Rd,
         RegWrbData => RegWrbData,
         
         ID_Rx => ID_Rx,
@@ -990,12 +996,12 @@ begin
     
     Process_RegWrbModule: RegWrbModule
     port map (
-        RegWrbOp => MEM_RF_RegWrbOp,
+        RegWrbOp => EXE_RF_RegWrbOp,
         RegWrbOut => RegWrbData,
         
-        MEM_RF_FlagSign => MEM_RF_Flags(1),
-        MEM_RF_LW => MEM_RF_LW,
-        MEM_RF_Res => MEM_RF_Res
+        MEM_RF_FlagSign => EXE_RF_Flags(1),
+        MEM_RF_LW => MEM_LW,
+        MEM_RF_Res => EXE_RF_Res
     );
     
     Process_VGAController: VGAController

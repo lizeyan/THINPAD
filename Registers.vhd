@@ -24,6 +24,9 @@ use IEEE.std_logic_unsigned.all;
 
 entity Registers is
     Port ( clk : in STD_LOGIC;
+           id_rfop : in std_logic_vector (1 downto 0);
+           IF_RX    : in STD_LOGIC_VECTOR (2 downto 0);
+           IF_RY    : in STD_LOGIC_VECTOR (2 downto 0);
            IF_RF_RX : in STD_LOGIC_VECTOR(2 downto 0);
            IF_RF_RY : in STD_LOGIC_VECTOR(2 downto 0);
            RegWrbAddr : in STD_LOGIC_VECTOR(3 downto 0); --这里应该从旁路来拿阿
@@ -61,30 +64,64 @@ begin
         IH <= data(8);
         SP <= data(9);
         T <= data(10);
-		  ID_IH <= data(8);
-        ID_SP <= data(9);
-        ID_T <= data(10);
-	 end process;
+    end process;
 -- write
-    process(clk)
+    process(clk, IF_RF_RX, IF_RF_RY, RegWrbAddr, RegWrbData, id_rfop, IF_RX, IF_RY)
     begin
         if rising_edge(clk) then
             data(conv_integer(RegWrbAddr)) <= RegWrbData;
-			end if;
+            
+            if regwrbaddr = ('0' & if_rx) and id_rfop(1) = '0' then
+                id_rx <= regwrbdata;
+            elsif regwrbaddr = ('0' & if_rf_rx) and id_rfop = "10" then
+                id_rx <= regwrbdata;
+            elsif id_rfop = "10" then
+                ID_Rx <= data(conv_integer(IF_RF_RX));
+            else
+                ID_RX <= data(conv_integer(IF_RX));
+            end if;
+            
+            if regwrbaddr = ('0' & if_ry) and id_rfop(1) = '0' then
+                id_ry <= regwrbdata;
+            elsif regwrbaddr = ('0' & if_rf_ry) and id_rfop = "10" then
+                id_ry <= regwrbdata;
+            elsif id_rfop = "10" then
+                ID_Ry <= data(conv_integer(IF_RF_RY));
+            else
+                ID_Ry <= data(conv_integer(IF_RY));
+            end if;
+            
+            if regwrbaddr = "1000" then
+                ID_IH <= regwrbdata;
+            else
+                ID_IH <= data(8);
+            end if;
+            
+            if regwrbaddr = "1001" then
+                ID_SP <= regwrbdata;
+            else
+                ID_SP <= data(9);
+            end if;
+            if regwrbaddr = "1010" then
+                ID_T <= regwrbdata;
+            else
+                ID_T <= data(10);
+            end if;
+        end if;
     end process;
--- read
-	process(clk, IF_RF_RX, IF_RF_RY, RegWrbAddr, RegWrbData, data)
-	begin
-		ID_Rx <= data(conv_integer(IF_RF_RX));
-		ID_RY <= data(conv_integer(IF_RF_RY));
-		if regwrbaddr = ('0' & if_rf_rx) then
-			id_rx <= regwrbdata;
-		end if;
-		if regwrbaddr = ('0' & if_rf_ry) then
-			id_ry <= regwrbdata;
-		end if;
-		ID_IH <= data(8);
-		ID_SP <= data(9);
-		ID_T <= data(10);
-	end process;
+---- read
+--	process(clk, IF_RF_RX, IF_RF_RY, RegWrbAddr, RegWrbData, data)
+--	begin
+--		ID_Rx <= data(conv_integer(IF_RF_RX));
+--		ID_RY <= data(conv_integer(IF_RF_RY));
+--		if regwrbaddr = ('0' & if_rf_rx) then
+--			id_rx <= regwrbdata;
+--		end if;
+--		if regwrbaddr = ('0' & if_rf_ry) then
+--			id_ry <= regwrbdata;
+--		end if;
+--		ID_IH <= data(8);
+--		ID_SP <= data(9);
+--		ID_T <= data(10);
+--	end process;
 end Behavioral;
