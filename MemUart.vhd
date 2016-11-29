@@ -178,7 +178,7 @@ begin
                 when '1' =>
                     ram2en <= '0';
                     ram2oe <= '1';
-                    ram2we <= clk;
+                    ram2we <= '0';
                     addr2 <= exe_rf_res;
                     data2 <= mem_sw_data;
                 when '0' =>

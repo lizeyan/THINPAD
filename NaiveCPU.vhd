@@ -670,7 +670,7 @@ begin
     Process_ClockModule_SOURCE: ClockModule
     port map (
         clk_in => clk_50,
-        clk_2 => clk_source
+        clk => clk_source
     );
 	 
     Process_ClockModule: ClockModule

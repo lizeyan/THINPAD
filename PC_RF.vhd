@@ -40,7 +40,7 @@ entity PC_RF is
 end PC_RF;
 
 architecture Behavioral of PC_RF is
-    constant DelInt : std_logic_vector(15 downto 0) := "0000000000000101";  -- Address of DelInt
+    constant DelInt : std_logic_vector(15 downto 0) := "0000000000000110";  -- Address of DelInt
     
     signal pc : std_logic_vector(15 downto 0) := (others => '0');
 begin
