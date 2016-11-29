@@ -64,11 +64,11 @@ end MemUart;
 
 architecture Behavioral of MemUart is
 	signal state: STD_LOGIC := '0';
-	shared variable data : std_logic_vector (15 downto 0) := "0000000000000000";
+	signal data : std_logic_vector (15 downto 0) := "0000000000000000";
 	shared variable nready : std_logic := '1';
 begin
 	state_out <= "000" & state;
-    process (exe_rf_res, mem_en, ramrwop)
+    process (exe_rf_res, mem_en, ramrwop, data1, state)
     begin
         if exe_rf_res(15 downto 2) = "10111111000000" and ramrwop = '0' and exe_rf_res(0) = '0' and mem_en = '1' and state = '0' and nready = '0' then -- read uart
             mem_lw <= "00000000" & data1 (7 downto 0);
@@ -118,7 +118,7 @@ begin
 				ram1we <= '1';
 				ram1oe <= '1';
 				data1 <= "ZZZZZZZZZZZZZZZZ";
-				data := "00000000000000" & dataready & (tbre and tsre);
+				data <= "00000000000000" & dataready & (tbre and tsre);
 			elsif (state /= '0' and exe_rf_res(15) = '1' and ramrwop = '0' and mem_en = '1')
                 or (state = '0' and alures(15) = '1' and ramrwop_lh = '0' and mem_en_lh = '1') then --read ram1
 				uartrdn <= '1';
@@ -128,7 +128,7 @@ begin
 						addr1 <= alures;
 						data1 <= "ZZZZZZZZZZZZZZZZ";
 					when '1' =>
-						data := data1;
+						data <= data1;
                         ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
                         data1 <= "ZZZZZZZZZZZZZZZZ";
 					when others => null;
@@ -148,7 +148,7 @@ begin
             elsif (state /= '0' and exe_rf_res(15) = '0' and ramrwop = '0' and mem_en = '1')
                 or (state = '0' and alures(15) = '0' and ramrwop_lh = '0' and mem_en_lh = '1') then --read ram2
                     if state = '1' then
-                        data := data2;
+                        data <= data2;
                     end if;
 			else
                 data1 <= "ZZZZZZZZZZZZZZZZ";
