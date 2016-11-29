@@ -30,7 +30,7 @@ entity ClockModule is
            clk_4 : out STD_LOGIC;
            clk_8 : out STD_LOGIC;
            clk_16 : out STD_LOGIC;
-			  clk_1k : out STD_LOGIC);
+          clk_1k : out STD_LOGIC);
 end ClockModule;
 
 architecture Behavioral of ClockModule is

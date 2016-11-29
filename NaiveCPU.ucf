@@ -140,5 +140,5 @@ NET "ledlights[0]" LOC = D10;
 
 # PlanAhead Generated physical constraints 
 
-#NET "clk" LOC = U9;
+#NET "clk" LOC = B9;
 ##NET "mode" LOC = U10;
