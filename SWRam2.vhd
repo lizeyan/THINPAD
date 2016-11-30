@@ -35,7 +35,7 @@ entity SWRam2 is
            Addr : in  STD_LOGIC_VECTOR (15 downto 0);
            Data : in  STD_LOGIC_VECTOR (15 downto 0);
            ramWrite : in boolean;
-           storeReady : out boolean;
+           storeReady : out boolean := true;
            EN : out  STD_LOGIC;
            OE : out  STD_LOGIC;
            WE : out  STD_LOGIC;
@@ -51,9 +51,8 @@ begin
     process(clk, rst)
     begin
         if rst='0' then
-            Data <= "0000100000000000";
             en <= '0';   we <= '1';		oe <= '1';
-            storeReady <= '1';
+            storeReady <= true;
         else
             if clk'event and clk='1' then
                 if ramWrite then
@@ -62,13 +61,13 @@ begin
                             en <= '0';
                             we <= '1';
                             oe <= '1';
-                            storeReady <= '0';
+                            storeReady <= false;
                             state <= '1';
                         when '1' => 
                             we <= '0';
                             ramAddr <= Addr;
                             ramData <= Data;
-                            storeReady <= '1';
+                            storeReady <= true;
                             state <= '0';
                         when others => 
                             null;

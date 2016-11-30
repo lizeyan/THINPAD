@@ -22,7 +22,9 @@ use IEEE.STD_LOGIC_1164.ALL;
 
 -- Uncomment the following library declaration if using
 -- arithmetic functions with Signed or Unsigned values
---use IEEE.NUMERIC_STD.ALL;
+use IEEE.NUMERIC_STD.ALL;
+use IEEE.STD_LOGIC_ARITH.ALL;
+use IEEE.std_logic_unsigned.all;
 
 -- Uncomment the following library declaration if instantiating
 -- any Xilinx primitives in this code.
@@ -158,31 +160,30 @@ architecture Behavioral of CPUController is
     signal cpu_ram2oe : std_logic;
     signal boot_ram2we : std_logic;
     signal cpu_ram2we : std_logic;
-    signal boot_addr2 : std_logic(15 downto 0);
-    signal cpu_addr2 : std_logic(15 downto 0);
-    signal boot_data2 : std_logic(15 downto 0);
-    signal cpu_data2 : std_logic(15 downto 0);
+    signal boot_addr2 : std_logic_vector(15 downto 0);
+    signal cpu_addr2 : std_logic_vector(15 downto 0);
+    signal boot_data2 : std_logic_vector(15 downto 0);
+    signal cpu_data2 : std_logic_vector(15 downto 0);
     
-	 signal clk : std_logic;
+	signal clk : std_logic;
     signal boot_clk : std_logic;
     signal cpu_clk : std_logic;
 	 
-	 signal flash_addr : std_logic_vector(22 downto 1);
-	 signal flash_data : std_logic_vector(15 downto 0);
-	 signal ram2_addr : std_logic_vector(15 downto 1);
-	 signal ram2_data : std_logic_vector(15 downto 0);
+	signal flash_address : std_logic_vector(22 downto 1) := (others => '0');
+    signal addr_count : std_logic_vector(15 downto 0) := (others => '0');
+    signal flash_dataout : std_logic_vector(15 downto 0);
+    signal ram2_addr : std_logic_vector(15 downto 0) := (others => '0');
+	signal ram2_data : std_logic_vector(15 downto 0) := (others => '0');
 	 
-	 signal flash_read, ram_write, load_ready, store_ready : boolean := true;
-	 signal boot_finish : boolean := false;
+	signal flash_read, ram2_write, load_ready, store_ready : boolean := true;
+	signal boot_finish : boolean := false;
+     
+    signal state : std_logic_vector(1 downto 0) := "00"; 
 	 
     
 begin
     
 	 clk <= clk_50;
-	 flash_addr <= (others => '0');
-	 flash_data <= (others => '0');
-	 ram2_addr  <= (others => '0');
-	 ram2_data <= (others => '0');
 	 
 	 process(boot_finish)
 	 begin
@@ -208,12 +209,48 @@ begin
 	 process(clk)
 	 begin
 		if(clk'event and clk='1') then
-			if flash_addr < 536 then -- boot state
-				boot_finish <= '0';
-				
-					
+			if addr_count < x"0FFFF" then -- boot
+				boot_finish <= false;
+				case state is
+                    when "00" => -- read
+                        if load_ready then
+                            flash_read <= true;
+                            ram2_write <= false;
+                            flash_address <= "000000" & addr_count;
+                            state <= "01";
+                        else
+                            state <= "00";
+                        end if;
+                    when "01" => -- wait for reading
+                        if load_ready then -- read over
+                            flash_read <= false;
+                            ram2_write <= true;
+                            state <= "10";
+                        else
+                            state <= "01";
+                        end if;
+                    when "10" => -- write
+                        if store_ready then
+                            ram2_data <= flash_dataout;
+                            ram2_addr <= addr_count;
+                            state <= "11";
+                        else 
+                            state <= "10";
+                        end if;
+                    when "11" =>
+                        if store_ready then -- write over
+                            ram2_write <= false;
+                            flash_read <= true;
+                            addr_count <= addr_count + 1;
+                            state <= "00";
+                        else
+                            state <= "11";
+                        end if;
+                    when others => 
+                        state <= "00";
+				end case;
 			else -- boot finish
-				boot_finish <= '1';
+				boot_finish <= true;
 			end if;
 		end if;
 	 end process;
@@ -260,9 +297,9 @@ begin
 	 
 	 Process_Flash : Flash
 	 port map (
-		   address => flash_addr,
-			dataout => flash_data,
-			flashReady => flash_ready,
+		    address => flash_address,
+			dataout => flash_dataout,
+			flashRead => flash_read,
 			loadReady => load_ready,
 			clk => boot_clk,
 			rst => rst,
@@ -284,13 +321,13 @@ begin
 		rst => rst,
 		Addr => ram2_addr,
 		data => ram2_data,
-		ramWrite => ram_write,
+		ramWrite => ram2_write,
 		storeReady => store_ready,
 		
 		en => boot_ram2en,
 		oe => boot_ram2oe,
 		we => boot_ram2we,
-		ramAddr => boot_add2,
+		ramAddr => boot_addr2,
 		ramData => boot_data2
 	 );
 

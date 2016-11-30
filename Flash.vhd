@@ -26,7 +26,7 @@ entity Flash is
     Port ( address : in std_logic_vector(22 downto 1);  --
            dataout : out std_logic_vector(15 downto 0);  -- 
            flashRead : in boolean;
-           loadReady : out boolean;
+           loadReady : out boolean := true;
            clk : in std_logic;
            rst : in std_logic;
            
@@ -48,7 +48,6 @@ begin
     flash_vpen <= '1';
     flash_ce <= '0';
     flash_rp <= '1';
-    loadReady <= '1';
     process(clk, rst)
     begin
         if rst='0' then
@@ -57,37 +56,37 @@ begin
             flash_we <= '1';
             state <= "000";
             flash_data <= (others => 'Z');
-            loadReady <= '1';
+            loadReady <= true;
         else
             if clk'event and clk='1' then
-                if flashRead='0' then
+                if flashRead then
                     case state is
                         when "000" =>  -- boot start 1
                             flash_we <= '0';
                             state <= "001";
-                            loadReady <= '0';
+                            loadReady <= false;
                         when "001" =>  -- boot start 2
                             flash_data <= "0000000011111111";
                             state <= "010";
-                            loadReady <= '0';
+                            loadReady <= false;
                         when "010" =>  -- boot start 3
                             flash_we <= '1';
                             state <= "011";
-                            loadReady <= '0';
+                            loadReady <= false;
                         when "011" =>  -- boot addr ready
                             flash_addr <= address;
                             flash_oe <= '0';
                             flash_data <= (others => 'Z');
                             state <= "100";
-                            loadReady <= '0';
+                            loadReady <= false;
                         when "100" =>  -- boot data read
                             dataout <= flash_data;
                             flash_oe <= '1';
                             state <= "101";
-                            loadReady <= '0';
+                            loadReady <= false;
                         when "101" =>  -- boot data read2
                             state <= "000";
-                            loadReady <= '1';
+                            loadReady <= true;
                         when others => 
                             null;
                     end case;
