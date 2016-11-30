@@ -23,9 +23,9 @@ use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
 
 entity Flash is
-    Port ( address : in std_logic_vector(15 downto 0);  -- 22 downto 1 ?
+    Port ( address : in std_logic_vector(22 downto 1);  --
            dataout : out std_logic_vector(15 downto 0);  -- 
-           flash_read : in boolean;
+           flashRead : in boolean;
            loadReady : out boolean;
            clk : in std_logic;
            rst : in std_logic;
@@ -36,7 +36,7 @@ entity Flash is
            flash_oe : out std_logic := '1';
            flash_we : out std_logic := '1';
            flash_rp : out std_logic := '1';
-           flash_addr : out std_logic_vector(15 downto 0) := (others => '0');
+           flash_addr : out std_logic_vector(22 downto 1) := (others => '0');
            flash_data : inout std_logic_vector(15 downto 0) := (others => 'Z'));
 end Flash;
 
@@ -60,7 +60,7 @@ begin
             loadReady <= '1';
         else
             if clk'event and clk='1' then
-                if flash_read='0' then
+                if flashRead='0' then
                     case state is
                         when "000" =>  -- boot start 1
                             flash_we <= '0';

@@ -64,8 +64,19 @@ entity CPUController is
            Vs : out STD_LOGIC;
            R : out STD_LOGIC_VECTOR(2 downto 0);
            G : out STD_LOGIC_VECTOR(2 downto 0);
-           B : out STD_LOGIC_VECTOR(2 downto 0)
+           B : out STD_LOGIC_VECTOR(2 downto 0);
            -- NaiveCPU ------------------------------------
+			  
+			  -- Flash ---------------------------------------
+			  flash_byte : out std_logic;
+           flash_vpen : out std_logic;
+           flash_ce : out std_logic;
+           flash_oe : out std_logic;
+           flash_we : out std_logic;
+           flash_rp : out std_logic;
+           flash_addr : out std_logic_vector(22 downto 1) := (others => '0');
+           flash_data : inout std_logic_vector(15 downto 0) := (others => 'Z')
+			  -- Flash ---------------------------------------
            );
 end CPUController;
 
@@ -107,21 +118,21 @@ architecture Behavioral of CPUController is
     end component;
     
     component Flash
-        Port ( address : in std_logic_vector(15 downto 0);  -- 22 downto 1 ?
+        Port ( address : in std_logic_vector(22 downto 1);  -- 22 downto 1 ?
                dataout : out std_logic_vector(15 downto 0);  -- 
-               flash_read : in boolean;
+               flashRead : in boolean;
                loadReady : out boolean;
                clk : in std_logic;
                rst : in std_logic;
                
-               flash_byte : out std_logic := '1';
-               flash_vpen : out std_logic := '1';
-               flash_ce : out std_logic := '0';
-               flash_oe : out std_logic := '1';
-               flash_we : out std_logic := '1';
-               flash_rp : out std_logic := '1';
-               flash_addr : out std_logic_vector(15 downto 0) := (others => '0');
-               flash_data : inout std_logic_vector(15 downto 0) := (others => 'Z'));
+               flash_byte : out std_logic;
+               flash_vpen : out std_logic;
+               flash_ce : out std_logic;
+               flash_oe : out std_logic;
+               flash_we : out std_logic;
+               flash_rp : out std_logic;
+               flash_addr : out std_logic_vector(22 downto 1);
+               flash_data : inout std_logic_vector(15 downto 0));
     end component;
     
     component SWRam2
@@ -147,16 +158,68 @@ architecture Behavioral of CPUController is
     signal cpu_ram2oe : std_logic;
     signal boot_ram2we : std_logic;
     signal cpu_ram2we : std_logic;
-    signal boot_addr2 : std_logic;
-    signal cpu_addr2 : std_logic;
-    signal boot_data2 : std_logic;
-    signal cpu_data2 : std_logic;
+    signal boot_addr2 : std_logic(15 downto 0);
+    signal cpu_addr2 : std_logic(15 downto 0);
+    signal boot_data2 : std_logic(15 downto 0);
+    signal cpu_data2 : std_logic(15 downto 0);
     
+	 signal clk : std_logic;
     signal boot_clk : std_logic;
     signal cpu_clk : std_logic;
+	 
+	 signal flash_addr : std_logic_vector(22 downto 1);
+	 signal flash_data : std_logic_vector(15 downto 0);
+	 signal ram2_addr : std_logic_vector(15 downto 1);
+	 signal ram2_data : std_logic_vector(15 downto 0);
+	 
+	 signal flash_read, ram_write, load_ready, store_ready : boolean := true;
+	 signal boot_finish : boolean := false;
+	 
     
 begin
     
+	 clk <= clk_50;
+	 flash_addr <= (others => '0');
+	 flash_data <= (others => '0');
+	 ram2_addr  <= (others => '0');
+	 ram2_data <= (others => '0');
+	 
+	 process(boot_finish)
+	 begin
+		if not boot_finish then
+			boot_clk <= clk;
+			ram2en <= boot_ram2en;
+			ram2oe <= boot_ram2oe;
+			ram2we <= boot_ram2we;
+			addr2 <= boot_addr2;
+			data2 <= boot_data2;
+			cpu_clk <= '0';
+		else
+			boot_clk <= '0';
+			cpu_clk <= clk;
+			ram2en <= cpu_ram2en;
+			ram2oe <= cpu_ram2oe;
+			ram2we <= cpu_ram2we;
+			addr2 <= cpu_addr2;
+			data2 <= cpu_data2;
+		end if;
+	 end process;
+	 
+	 process(clk)
+	 begin
+		if(clk'event and clk='1') then
+			if flash_addr < 536 then -- boot state
+				boot_finish <= '0';
+				
+					
+			else -- boot finish
+				boot_finish <= '1';
+			end if;
+		end if;
+	 end process;
+	 
+	 
+	 
     
     Process_NaiveCPU : NaiveCPU
     port map (
@@ -169,7 +232,7 @@ begin
         Addr1 => Addr1,
         Addr2 => cpu_addr2,
         Data1 => Data1,
-        Data2 => cpu,
+        Data2 => cpu_data2,
         Ram1EN => Ram1EN,
         Ram1OE => Ram1OE,
         Ram1WE => Ram1WE,
@@ -194,6 +257,42 @@ begin
         G => G,
         B => B
     );
+	 
+	 Process_Flash : Flash
+	 port map (
+		   address => flash_addr,
+			dataout => flash_data,
+			flashReady => flash_ready,
+			loadReady => load_ready,
+			clk => boot_clk,
+			rst => rst,
+			
+			flash_byte => flash_byte,
+			flash_vpen => flash_vpen,
+			flash_ce => flash_ce,
+			flash_oe => flash_oe,
+			flash_we => flash_we,
+			flash_rp => flash_rp,
+			flash_addr => flash_addr,
+			flash_data => flash_data
+			
+	 );
+	 
+	 Process_SWRam2 : SWRam2
+	 port map (
+		clk => boot_clk,
+		rst => rst,
+		Addr => ram2_addr,
+		data => ram2_data,
+		ramWrite => ram_write,
+		storeReady => store_ready,
+		
+		en => boot_ram2en,
+		oe => boot_ram2oe,
+		we => boot_ram2we,
+		ramAddr => boot_add2,
+		ramData => boot_data2
+	 );
 
 end Behavioral;
 
