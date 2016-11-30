@@ -122,7 +122,13 @@ architecture Behavioral of NaiveCPU is
                clk_16 : out STD_LOGIC;
                clk_1k : out std_logic);
     end component;
-    
+    component Doubler
+    port ( CLKIN_IN  : in    std_logic; 
+          RST_IN    : in    std_logic; 
+          CLKFX_OUT : out   std_logic; 
+          CLK0_OUT  : out   std_logic; 
+          CLK2X_OUT : out   std_logic);
+    end component;
     -- Control Unit
     component ControlUnit
         Port ( -- IF
@@ -671,10 +677,16 @@ begin
         IF_RF_PC => IF_RF_PC,
         PC_RF_PC => PC_RF_PC
     );
-
+    process_doubler: Doubler
+    port map (
+        rst_in => '0',
+        clkin_in => clk_50,
+        clkfx_out => clk_source
+    );
+    
     Process_ClockModule: ClockModule
     port map (
-        clk_in => clk_50,
+        clk_in => clk_source,
         clk => clk,
         clk_2 => clk_2,
         clk_4 => clk_4,

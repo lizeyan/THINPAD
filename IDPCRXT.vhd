@@ -99,7 +99,7 @@ begin
                 BTBTOp <= '1';
             when others =>
                 IDPC <= "1111111111111111";
-                BTBTOp <= '1';
+                BTBTOp <= '0';
         end case;
     end process;
 end Behavioral;

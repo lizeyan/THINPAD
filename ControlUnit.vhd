@@ -812,7 +812,7 @@ begin
 	-- 使用ID段得到的IF_RD_OP
 	process (IF_RF_ST)
 		variable op: STD_LOGIC_VECTOR (4 downto 0);
-		variable dir: STD_LOGIC_VECTOR (2 downto 0); -- 
+		variable dir: STD_LOGIC_VECTOR (2 downto 0) := "111"; -- 
 	begin
 		op := if_rf_st (15 downto 11);
 		case op is
@@ -998,8 +998,12 @@ begin
 							regwrbop <= "00";
 						when "00000" => --mfpc
 							aluop <= "0010";
-							dir := "000";
 							regwrbop <= "00";
+                            if if_rf_st(7 downto 5) = "010" then
+                                dir := "000";
+                            else
+                                dir := "111";
+                            end if;
 						when others =>
 							aluop <= "1111";
 							dir := "111";

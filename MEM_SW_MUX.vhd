@@ -38,10 +38,10 @@ entity MEM_SW_MUX is
            mem_sw_srcop : in  STD_LOGIC;
            lw_in : in  STD_LOGIC_VECTOR (15 downto 0);
            res_in : in  STD_LOGIC_VECTOR (15 downto 0);
-			  mem_rf_lw : in  STD_LOGIC_VECTOR (15 downto 0);
-			  mem_rf_res : in  STD_LOGIC_VECTOR (15 downto 0);
-			  exe_rf_rx : in  STD_LOGIC_VECTOR (15 downto 0); 
-			  exe_rf_ry : in  STD_LOGIC_VECTOR (15 downto 0);
+           mem_rf_lw : in  STD_LOGIC_VECTOR (15 downto 0);
+           mem_rf_res : in  STD_LOGIC_VECTOR (15 downto 0);
+           exe_rf_rx : in  STD_LOGIC_VECTOR (15 downto 0); 
+           exe_rf_ry : in  STD_LOGIC_VECTOR (15 downto 0);
            clk : in  STD_LOGIC;
            mem_sw_data : out  STD_LOGIC_VECTOR (15 downto 0));
 end MEM_SW_MUX;

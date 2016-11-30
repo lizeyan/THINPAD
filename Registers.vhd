@@ -76,9 +76,9 @@ begin
             elsif regwrbaddr = ('0' & if_rf_rx) and id_rfop = "10" then
                 id_rx <= regwrbdata;
             elsif id_rfop = "10" then
-                ID_Rx <= data(conv_integer(IF_RF_RX));
+                ID_Rx <= data(conv_integer('0' & IF_RF_RX));
             else
-                ID_RX <= data(conv_integer(IF_RX));
+                ID_RX <= data(conv_integer('0' & IF_RX));
             end if;
             
             if regwrbaddr = ('0' & if_ry) and id_rfop(1) = '0' then
@@ -86,9 +86,9 @@ begin
             elsif regwrbaddr = ('0' & if_rf_ry) and id_rfop = "10" then
                 id_ry <= regwrbdata;
             elsif id_rfop = "10" then
-                ID_Ry <= data(conv_integer(IF_RF_RY));
+                ID_Ry <= data(conv_integer('0' & IF_RF_RY));
             else
-                ID_Ry <= data(conv_integer(IF_RY));
+                ID_Ry <= data(conv_integer('0' & IF_RY));
             end if;
             
             if regwrbaddr = "1000" then
