@@ -33,6 +33,8 @@ use IEEE.STD_LOGIC_1164.ALL;
 -- 010 mem_rf_lw
 -- 011 mem_rf_res
 -- 1xx exe_rf_rx or ry
+-- 101 PC
+-- 110 EXPCODE
 entity MEM_SW_MUX is
     Port ( mem_sw_muxop : in  STD_LOGIC_VECTOR (2 downto 0);
            mem_sw_srcop : in  STD_LOGIC;
@@ -42,6 +44,8 @@ entity MEM_SW_MUX is
            mem_rf_res : in  STD_LOGIC_VECTOR (15 downto 0);
            exe_rf_rx : in  STD_LOGIC_VECTOR (15 downto 0); 
            exe_rf_ry : in  STD_LOGIC_VECTOR (15 downto 0);
+           exe_rf_st : in  STD_LOGIC_VECTOR (15 downto 0);
+           exe_rf_pc : in  STD_LOGIC_VECTOR (15 downto 0);
            clk : in  STD_LOGIC;
            mem_sw_data : out  STD_LOGIC_VECTOR (15 downto 0));
 end MEM_SW_MUX;
@@ -57,15 +61,25 @@ begin
 		end if;
 	end process;
 
-	process (mem_sw_muxop, mem_sw_srcop, lw, res, mem_rf_lw, mem_rf_res, exe_rf_rx, exe_rf_ry)
+	process (mem_sw_muxop, mem_sw_srcop, lw, res, mem_rf_lw, mem_rf_res, exe_rf_rx, exe_rf_ry, exe_rf_pc, exe_rf_st)
 	begin
 		case mem_sw_muxop is
 			when "000" => mem_sw_data <= lw;
 			when "001" => mem_sw_data <= res;
 			when "010" => mem_sw_data <= mem_rf_lw;
 			when "011" => mem_sw_data <= mem_rf_res;
-			when others =>
+			when "100" =>
 				if mem_sw_srcop = '0' then
+					mem_sw_data <= exe_rf_rx;
+				else
+					mem_sw_data <= exe_rf_ry;
+				end if;
+            when "101" =>
+                mem_sw_data <= exe_rf_pc;
+            when "110" =>
+                mem_sw_data <= "000000000000" & exe_rf_st(3 downto 0);
+            when others =>
+                if mem_sw_srcop = '0' then
 					mem_sw_data <= exe_rf_rx;
 				else
 					mem_sw_data <= exe_rf_ry;

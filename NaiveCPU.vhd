@@ -134,7 +134,7 @@ architecture Behavioral of NaiveCPU is
         Port ( -- IF
                ExDigitsOp : out std_logic_vector(2 downto 0); --��չλ������
                ExSignOp : out std_logic; 
-               
+               int : out std_logic;
                -- ID
                AluOp : out std_logic_vector(3 downto 0); --alu������
                AMuxOp : out std_logic_vector(3 downto 0);
@@ -318,7 +318,7 @@ architecture Behavioral of NaiveCPU is
     component IF_RF
         Port ( clk : in std_logic;
                IF_RFOp : in std_logic_vector(1 downto 0);  -- 10 for WE_N, 11 for NOP, 0- for WE
-               
+               INT : in STD_LOGIC;
                RF_Imm_In : in std_logic_vector(15 downto 0);
                RF_Ins_In : in std_logic_vector(15 downto 0);
                RF_PC_In : in std_logic_vector(15 downto 0);
@@ -359,10 +359,12 @@ architecture Behavioral of NaiveCPU is
            mem_sw_srcop : in  STD_LOGIC;
            lw_in : in  STD_LOGIC_VECTOR (15 downto 0);
            res_in : in  STD_LOGIC_VECTOR (15 downto 0);
-			  mem_rf_lw : in  STD_LOGIC_VECTOR (15 downto 0);
-			  mem_rf_res : in  STD_LOGIC_VECTOR (15 downto 0);
-			  exe_rf_rx : in  STD_LOGIC_VECTOR (15 downto 0); 
-			  exe_rf_ry : in  STD_LOGIC_VECTOR (15 downto 0);
+           mem_rf_lw : in  STD_LOGIC_VECTOR (15 downto 0);
+           mem_rf_res : in  STD_LOGIC_VECTOR (15 downto 0);
+           exe_rf_rx : in  STD_LOGIC_VECTOR (15 downto 0); 
+           exe_rf_ry : in  STD_LOGIC_VECTOR (15 downto 0);
+           exe_rf_st : in STD_LOGIC_VECTOR (15 downto 0);
+           exe_rf_pc : in STD_LOGIC_VECTOR (15 downto 0);
            clk : in  STD_LOGIC;
            mem_sw_data : out  STD_LOGIC_VECTOR (15 downto 0));
 	end component;
@@ -415,7 +417,6 @@ architecture Behavioral of NaiveCPU is
                IDPC : in std_logic_vector(15 downto 0);
                EXE_RES_PC : in std_logic_vector(15 downto 0);
                PDTPC : in std_logic_vector(15 downto 0);
-               
                RF_PC_Out : out std_logic_vector(15 downto 0));
     end component;
     
@@ -508,6 +509,7 @@ architecture Behavioral of NaiveCPU is
     signal SWSrc : std_logic;
 	 signal SWMUXOP : std_logic_vector (2 downto 0);
     signal memen : std_logic;
+    signal int : std_logic;
     -- ENABLE complex
     signal EXE_RFOp : std_logic_vector(1 downto 0);
     signal ID_RFOp : std_logic_vector(1 downto 0);
@@ -698,7 +700,7 @@ begin
     port map (
         ExDigitsOp => ExDigitsOp,
         ExSignOp => ExSignOp,
-        
+        int => int,
         AluOp => AluOp,
         AMuxOp => AMuxOp,
         BMuxOp => BMuxOp,
@@ -878,7 +880,7 @@ begin
     port map (
         clk => clk_2,
         IF_RFOp => IF_RFOp,
-        
+        int => int,
         RF_Imm_In => IF_Imm,
         RF_Ins_In => IF_Ins,
         RF_PC_In => IF_Res,
@@ -922,6 +924,8 @@ begin
 		mem_rf_res => mem_rf_res,
 		exe_rf_rx => exe_rf_rx,
 		exe_rf_ry => exe_rf_ry,
+        exe_rf_st => exe_rf_st,
+        exe_rf_pc => exe_rf_pc,
 		mem_sw_data => mem_sw_data
 	);
 	 
@@ -972,7 +976,6 @@ begin
         IDPC => IDPC,
         EXE_RES_PC => ALURes,
         PDTPC => PDTPC,
-        
         RF_PC_Out => PC_RF_PC
     );
     

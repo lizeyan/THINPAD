@@ -27,7 +27,7 @@ entity ControlUnit is
            -- IF generate
            ExDigitsOp : out STD_LOGIC_VECTOR(2 downto 0); --传输到ExtendModule
            ExSignOp : out STD_LOGIC;
-           
+           INT : out STD_LOGIC;
            -- ID
            AluOp : out STD_LOGIC_VECTOR(3 downto 0); -- 保存到ID_RF
            AMuxOp : out STD_LOGIC_VECTOR(3 downto 0); --
@@ -105,8 +105,12 @@ begin
 			else
 				swmuxop <= "001";
 			end if;
-		else
-			swmuxop <= "111";
+		elsif if_rf_st(15 downto 4) = "111110000000" then
+            swmuxop <= "110";
+		elsif if_rf_st(15 downto 4) = "111110000001" then
+            swmuxop <= "101";
+        else
+			swmuxop <= "100";
 		end if;
 	end process;
 	--BMUXOP
@@ -117,7 +121,7 @@ begin
     -- 010 | ID_RF_Ry
     -- 011 | MEM_RF_LW
     -- 100 | MEM_RF_Res
-    -- 101 | all ones
+    -- 101 | one
     -- 110 | all zeros
 		procedure look_ahead (x: in std_logic_vector(3 downto 0);
 													side: out boolean;
@@ -241,6 +245,12 @@ begin
 					when others =>
 						bmuxop <= "111";
 				end case;
+            when "11111" =>
+                case if_rf_st(10 downto 4) is
+                    when "0000000" => bmuxop <= "110";
+                    when "0000001" => bmuxop <= "101";
+                    when others => bmuxop <= "111";
+                end case;
 			when others =>
 				bmuxop <= "111";
 		end case;
@@ -414,6 +424,8 @@ begin
 					when others =>
 						amuxop <= "1111";
 				end case;
+            when "11111" =>
+				look_ahead_sp;
 			when others =>
 				amuxop <= "1111";
 		end case;
@@ -652,6 +664,11 @@ begin
 			when "11111" => --int
 				if_rfop <= "00";
 				id_rfop <= "00";
+                if if_rf_st (10 downto 4) = "0000000" then
+                    pc_rfwe <= '0';
+                else
+                    pc_rfwe <= '1';
+                end if;
 			when others =>
 				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 		end case;
@@ -731,16 +748,20 @@ begin
 	--------------------------------------------------------------------------------------------
 	-- 产生PC_RFOP
 	-- pc_src_if
-	-- 除了INT应该到异常处理地址，别的都应该到预测地址
-	process (if_ins)
-	begin
-		if if_ins(15 downto 11) = "11111" then --int指令
-			pc_src_if <= "010";
-		else
-			pc_src_if <= "000";
-		end if;
-	end process;
+	-- 除了INT2应该到异常处理地址，别的都应该到预测地址
+--	process (if_ins)
+--	begin
+    pc_src_if <= "000";
+--	end process;
     
+    process (if_rf_st)
+    begin
+        if if_rf_st(15 downto 4) = "111110000000" then
+            int <= '1';
+        else
+            int <= '0';
+        end if;
+    end process;
     
 	-- pc_src_id
 	-- 非跳转指令都是PDT
@@ -757,6 +778,8 @@ begin
 			pc_src_id <= "001";
 		elsif if_rf_st(15 downto 11) = "11101" and if_rf_st(7 downto 0) = "00000000" and idpc /= pc_rf_pc then --jr
 			pc_src_id <= "001";
+        elsif if_rf_st = "1111100000010000" then
+            pc_src_id <= "010";
 		else
 			pc_src_id <= "000";
 		end if;
@@ -944,94 +967,101 @@ begin
 					regwrbop <= "00";
                     memen <= '0';
             when "11011" => -- sw
-					aluop <= "0000";
-					dir := "111";
-					ramrwop <= '1';
-					swsrc <= '1';
-					regwrbop <= "11";
-                    memen <= '1';
+                aluop <= "0000";
+                dir := "111";
+                ramrwop <= '1';
+                swsrc <= '1';
+                regwrbop <= "11";
+                memen <= '1';
             when "11010" => -- swsp
-					aluop <= "0000";
-					dir := "111";
-					ramrwop <= '1';
-					swsrc <= '0';
-					regwrbop <= "11";
-                    memen <= '1';
-				when "11100" => 
-					ramrwop <= '0';
-					swsrc <= '0';
-                    memen <= '0';
-					case if_rf_st(1 downto 0) is
-						when "01" => --addu
-							aluop <= "0000";
-							dir := "011";
-							regwrbop <= "00";
-						when "11" => --subu
-							aluop <= "0001";
-							regwrbop <= "00";
-							dir := "011";
-						when others =>
-							aluop <= "1111";
-							dir := "111";
-							regwrbop <= "11";
-					end case;
-				when "11101" =>
-					ramrwop <= '0';
-					swsrc <= '0';
-                    memen <= '0';
-					case if_rf_st(4 downto 0) is
-						when "01100" => -- and
-							aluop <= "0011";
-							dir := "000";
-							regwrbop <= "00";
-						when "01010" => --cmp
-							aluop <= "0110";
-							dir := "100";
-							regwrbop <= "10";
-						when "01101" => --or
-							aluop <= "0010";
-							dir := "000";
-							regwrbop <= "00";
-						when "00100" => -- sllv
-							aluop <= "0101";
-							dir := "001";
-							regwrbop <= "00";
-						when "00000" => --mfpc
-							aluop <= "0010";
-							regwrbop <= "00";
-                            if if_rf_st(7 downto 5) = "010" then
-                                dir := "000";
-                            else
-                                dir := "111";
-                            end if;
-						when others =>
-							aluop <= "1111";
-							dir := "111";
-							regwrbop <= "11";
-					end case;
-				when "11110" =>
-					ramrwop <= '0';
-					swsrc <= '0';
-					aluop <= "0010";
-                    memen <= '0';
-					case if_rf_st(0) is
-						when '0' => -- mfih
-							dir := "000";
-							regwrbop <= "00";
-						when '1' => -- mtih
-							dir := "110";
-							regwrbop <= "00";
-						when others =>
-							dir := "111";
-							regwrbop <= "11";
-					end case;
+                aluop <= "0000";
+                dir := "111";
+                ramrwop <= '1';
+                swsrc <= '0';
+                regwrbop <= "11";
+                memen <= '1';
+            when "11100" => 
+                ramrwop <= '0';
+                swsrc <= '0';
+                memen <= '0';
+                case if_rf_st(1 downto 0) is
+                    when "01" => --addu
+                        aluop <= "0000";
+                        dir := "011";
+                        regwrbop <= "00";
+                    when "11" => --subu
+                        aluop <= "0001";
+                        regwrbop <= "00";
+                        dir := "011";
+                    when others =>
+                        aluop <= "1111";
+                        dir := "111";
+                        regwrbop <= "11";
+                end case;
+            when "11101" =>
+                ramrwop <= '0';
+                swsrc <= '0';
+                memen <= '0';
+                case if_rf_st(4 downto 0) is
+                    when "01100" => -- and
+                        aluop <= "0011";
+                        dir := "000";
+                        regwrbop <= "00";
+                    when "01010" => --cmp
+                        aluop <= "0110";
+                        dir := "100";
+                        regwrbop <= "10";
+                    when "01101" => --or
+                        aluop <= "0010";
+                        dir := "000";
+                        regwrbop <= "00";
+                    when "00100" => -- sllv
+                        aluop <= "0101";
+                        dir := "001";
+                        regwrbop <= "00";
+                    when "00000" => --mfpc
+                        aluop <= "0010";
+                        regwrbop <= "00";
+                        if if_rf_st(7 downto 5) = "010" then
+                            dir := "000";
+                        else
+                            dir := "111";
+                        end if;
+                    when others =>
+                        aluop <= "1111";
+                        dir := "111";
+                        regwrbop <= "11";
+                end case;
+            when "11110" =>
+                ramrwop <= '0';
+                swsrc <= '0';
+                aluop <= "0010";
+                memen <= '0';
+                case if_rf_st(0) is
+                    when '0' => -- mfih
+                        dir := "000";
+                        regwrbop <= "00";
+                    when '1' => -- mtih
+                        dir := "110";
+                        regwrbop <= "00";
+                    when others =>
+                        dir := "111";
+                        regwrbop <= "11";
+                end case;
+            when "11111" =>
+                aluop <= "0000";
+                dir := "111";
+                ramrwop <= '1';
+                swsrc <= '0';
+                regwrbop <= "11";
+                memen <= '1';
             when others =>
-					ramrwop <= '0';
-					swsrc <= '0';
-					aluop <= "1111";
-					dir := "111";
-					regwrbop <= "11";
-                    memen <= '0';
+                ramrwop <= '0';
+                swsrc <= '0';
+                aluop <= "1111";
+                dir := "111";
+                regwrbop <= "11";
+                memen <= '0';
 			end case;
 			dirop <= dir;
 	end process;
@@ -1104,7 +1134,6 @@ begin
         end case;
     end process;
     
-	 
 --	-- template
 --	process
 --		variable op: STD_LOGIC_VECTOR (4 downto 0);

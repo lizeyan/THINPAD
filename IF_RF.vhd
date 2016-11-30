@@ -25,7 +25,7 @@ use IEEE.std_logic_unsigned.all;
 entity IF_RF is
     Port ( clk : in std_logic;
            IF_RFOp : in std_logic_vector(1 downto 0);  -- 10 for WE_N, 11 for NOP, 0- for WE
-           
+           INT      : in STD_LOGIC;
            RF_Imm_In : in std_logic_vector(15 downto 0);
            RF_Ins_In : in std_logic_vector(15 downto 0);
            RF_PC_In : in std_logic_vector(15 downto 0);
@@ -51,7 +51,10 @@ begin
     process(clk)
     begin
         if clk'event and clk='1' then
-            if IF_RFOp="11" then
+            if int = '1' then
+                imm <= pc;
+                ins <= "1111100000010000";
+            elsif IF_RFOp="11" then
                 imm <= "0000000000000000";
                 ins <= "0000100000000000";
                 pc <= RF_PC_In;

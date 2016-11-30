@@ -28,7 +28,7 @@ use IEEE.std_logic_unsigned.all;
 -- 010 | ID_RF_Ry
 -- 011 | MEM_RF_LW
 -- 100 | MEM_RF_Res
--- 101 | all ones
+-- 101 | one
 -- 110 | all zeros
 
 entity BMux is
@@ -58,7 +58,7 @@ begin
             when "100" => 
                 BSrc <= MEM_RF_Res;
 				when "101" =>
-					bsrc <= "1111111111111111";
+					bsrc <= "0000000000000001";
 				when "110" =>
 					bsrc <= "0000000000000000";
             when others => 
