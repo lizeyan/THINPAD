@@ -31,6 +31,7 @@ entity PC_RF is
     Port ( clk : in std_logic;
            rst: in std_logic;
            int : in STD_LOGIC;
+			  boot_finish: in boolean;
            PC_RFOp : in std_logic_vector(2 downto 0);
            PC_RFWE: in std_logic;
            IDPC : in std_logic_vector(15 downto 0);
@@ -45,9 +46,9 @@ architecture Behavioral of PC_RF is
 begin
     RF_PC_Out <= pc;
 
-    process(clk, rst)
+    process(clk, rst, boot_finish)
     begin
-        if rst = '0' then
+        if rst = '0' or (not boot_finish) then
             pc <= "0000000000000000";
         elsif clk'event and clk='1' and pc_rfwe = '1' then
             if int = '1' then
