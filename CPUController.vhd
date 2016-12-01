@@ -118,42 +118,7 @@ architecture Behavioral of CPUController is
                G : out STD_LOGIC_VECTOR(2 downto 0);
                B : out STD_LOGIC_VECTOR(2 downto 0));
     end component;
-    
-    component Flash
-        Port ( address : in std_logic_vector(22 downto 1);  -- 22 downto 1 ?
-               dataout : out std_logic_vector(15 downto 0);  -- 
-               flashRead : in boolean;
-               loadReady : out boolean;
-               clk : in std_logic;
-               rst : in std_logic;
-               
-               flash_byte : out std_logic;
-               flash_vpen : out std_logic;
-               flash_ce : out std_logic;
-               flash_oe : out std_logic;
-               flash_we : out std_logic;
-               flash_rp : out std_logic;
-               flash_addr : out std_logic_vector(22 downto 1);
-               flash_data : inout std_logic_vector(15 downto 0));
-    end component;
-    
-    component SWRam2
-        Port ( clk : in  STD_LOGIC;
-               rst : in  STD_LOGIC;
-               Addr : in  STD_LOGIC_VECTOR (15 downto 0);
-               Data : in  STD_LOGIC_VECTOR (15 downto 0);
-               ramWrite : in boolean;
-               storeReady : out boolean;
-               EN : out  STD_LOGIC;
-               OE : out  STD_LOGIC;
-               WE : out  STD_LOGIC;
-               ramAddr : out std_logic_vector(15 downto 0);
-               ramData : out std_logic_vector(15 downto 0)
-               );
-    end component;
-    
-    signal isboot : boolean;
-    
+        
     signal boot_ram2en : std_logic;
     signal cpu_ram2en : std_logic;
     signal boot_ram2oe : std_logic;
@@ -169,16 +134,16 @@ architecture Behavioral of CPUController is
     signal boot_clk : std_logic;
     signal cpu_clk : std_logic;
 	 
-	signal flash_address : std_logic_vector(22 downto 1) := (others => '0');
+--	signal flash_address : std_logic_vector(22 downto 1) := (others => '0');
     signal addr_count : std_logic_vector(15 downto 0) := (others => '0');
-    signal flash_dataout : std_logic_vector(15 downto 0);
-    signal ram2_addr : std_logic_vector(15 downto 0) := (others => '0');
-	signal ram2_data : std_logic_vector(15 downto 0) := (others => '0');
-	 
-	signal flash_read, ram2_write, load_ready, store_ready : boolean := true;
+    signal data_temp : std_logic_vector(15 downto 0) := (others => '0');
+--    signal flash_dataout : std_logic_vector(15 downto 0);
+--    signal ram2_addr : std_logic_vector(15 downto 0) := (others => '0');
+--	signal ram2_data : std_logic_vector(15 downto 0) := (others => '0');
+    
 	signal boot_finish : boolean := false;
      
-    signal state : std_logic_vector(1 downto 0) := "00"; 
+    signal state : std_logic_vector(3 downto 0) := "0000"; 
 	 
     
 begin
@@ -205,46 +170,48 @@ begin
 		end if;
 	 end process;
 	 
+     flash_byte <= '1';
+     flash_vpen <= '1';
+     flash_ce <= '0';
+     flash_rp <= '1';
+     
 	 process(clk)
 	 begin
 		if(clk'event and clk='1') then
-			if addr_count < x"0FFFF" then -- boot
+			if addr_count < x"0005" then -- boot
 				boot_finish <= false;
 				case state is
-                    when "00" => -- read
-                        if load_ready then
-                            flash_read <= true;
-                            ram2_write <= false;
-                            flash_address <= "000000" & addr_count;
-                            state <= "01";
-                        else
-                            state <= "00";
-                        end if;
-                    when "01" => -- wait for reading
-                        if load_ready then -- read over
-                            flash_read <= false;
-                            state <= "10";
-                        else
-                            state <= "01";
-                        end if;
-                    when "10" => -- write
-                        if store_ready then
-                            ram2_write <= true;
-                            ram2_data <= flash_dataout;
-                            ram2_addr <= addr_count;
-                            state <= "11";
-                        else 
-                            state <= "10";
-                        end if;
-                    when "11" =>
-                        if store_ready then -- write over
-                            addr_count <= addr_count + 1;
-                            state <= "00";
-                        else
-                            state <= "11";
-                        end if;
+                    when "0000" => -- read
+                        flash_we <= '0';
+                        flash_data <= "0000000011111111";
+                        state <= "0001";
+                    when "0001" => 
+                        flash_we <= '1';
+                        state <= "0010";
+                    when "0010" =>
+                        flash_oe <= '0';
+                        flash_addr <= "000000"&addr_count;
+                        flash_data <= (others => '0');
+                        state <= "0011";
+                    when "0011" =>
+                        data_temp <= flash_data;
+                        flash_oe <= '1';
+                        state <= "0100";
+                    when "0100" =>
+                        boot_ram2en <= '0';
+                        boot_ram2we <= '1';
+                        boot_ram2oe <= '1';
+                        state <= "0101";
+                    when "0101" =>
+                        boot_ram2we <= '0';
+                        boot_addr2 <= addr_count;
+                        boot_data2 <= data_temp;
+                        state <= "0110";
+                    when "0110" =>
+                        addr_count <= addr_count + 1;
+                        state <= "0000";
                     when others => 
-                        state <= "00";
+                        state <= "0000";
 				end case;
 			else -- boot finish
 				boot_finish <= true;
@@ -292,41 +259,78 @@ begin
         B => B
     );
 	 
-	 Process_Flash : Flash
-	 port map (
-		    address => flash_address,
-			dataout => flash_dataout,
-			flashRead => flash_read,
-			loadReady => load_ready,
-			clk => boot_clk,
-			rst => rst,
-			
-			flash_byte => flash_byte,
-			flash_vpen => flash_vpen,
-			flash_ce => flash_ce,
-			flash_oe => flash_oe,
-			flash_we => flash_we,
-			flash_rp => flash_rp,
-			flash_addr => flash_addr,
-			flash_data => flash_data
-			
-	 );
-	 
-	 Process_SWRam2 : SWRam2
-	 port map (
-		clk => boot_clk,
-		rst => rst,
-		Addr => ram2_addr,
-		data => ram2_data,
-		ramWrite => ram2_write,
-		storeReady => store_ready,
-		
-		en => boot_ram2en,
-		oe => boot_ram2oe,
-		we => boot_ram2we,
-		ramAddr => boot_addr2,
-		ramData => boot_data2
-	 );
+     
+     
+--    component Flash
+--        Port ( address : in std_logic_vector(22 downto 1);  -- 22 downto 1 ?
+--               dataout : out std_logic_vector(15 downto 0);  -- 
+--               flashRead : in boolean;
+--               loadReady : out boolean;
+--               clk : in std_logic;
+--               rst : in std_logic;
+--               
+--               flash_byte : out std_logic;
+--               flash_vpen : out std_logic;
+--               flash_ce : out std_logic;
+--               flash_oe : out std_logic;
+--               flash_we : out std_logic;
+--               flash_rp : out std_logic;
+--               flash_addr : out std_logic_vector(22 downto 1);
+--               flash_data : inout std_logic_vector(15 downto 0));
+--    end component;
+--    
+--    component SWRam2
+--        Port ( clk : in  STD_LOGIC;
+--               rst : in  STD_LOGIC;
+--               Addr : in  STD_LOGIC_VECTOR (15 downto 0);
+--               Data : in  STD_LOGIC_VECTOR (15 downto 0);
+--               ramWrite : in boolean;
+--               storeReady : out boolean;
+--               EN : out  STD_LOGIC;
+--               OE : out  STD_LOGIC;
+--               WE : out  STD_LOGIC;
+--               ramAddr : out std_logic_vector(15 downto 0);
+--               ramData : out std_logic_vector(15 downto 0)
+--               );
+--    end component;
+
+     
+     
+--	 Process_Flash : Flash
+--	 port map (
+--		    address => flash_address,
+--			dataout => flash_dataout,
+--			flashRead => flash_read,
+--			loadReady => load_ready,
+--			clk => boot_clk,
+--			rst => rst,
+--			
+--			flash_byte => flash_byte,
+--			flash_vpen => flash_vpen,
+--			flash_ce => flash_ce,
+--			flash_oe => flash_oe,
+--			flash_we => flash_we,
+--			flash_rp => flash_rp,
+--			flash_addr => flash_addr,
+--			flash_data => flash_data
+--			
+--	 );
+--	 
+--	 Process_SWRam2 : SWRam2
+--	 port map (
+--		clk => boot_clk,
+--		rst => rst,
+--		Addr => ram2_addr,
+--		data => ram2_data,
+--		ramWrite => ram2_write,
+--		storeReady => store_ready,
+--		
+--		en => boot_ram2en,
+--		oe => boot_ram2oe,
+--		we => boot_ram2we,
+--		ramAddr => boot_addr2,
+--		ramData => boot_data2
+--	 );
 
 end Behavioral;
 
