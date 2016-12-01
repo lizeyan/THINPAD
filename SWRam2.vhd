@@ -46,29 +46,36 @@ entity SWRam2 is
 end SWRam2;
 
 architecture Behavioral of SWRam2 is
-    signal state : std_logic := '0';
+    signal state : std_logic_vector(1 downto 0) := "00";
 begin
     process(clk, rst)
     begin
         if rst='0' then
             en <= '0';   we <= '1';		oe <= '1';
             storeReady <= true;
+            state <= "00";
         else
             if clk'event and clk='1' then
                 if ramWrite then
                     case state is
-                        when '0' => 
+                        when "00" => 
+                            state <= "01";
+                            storeReady <= true;
+                        when "01" =>
                             en <= '0';
                             we <= '1';
                             oe <= '1';
                             storeReady <= false;
-                            state <= '1';
-                        when '1' => 
+                            state <= "10";
+                        when "10" => 
                             we <= '0';
                             ramAddr <= Addr;
                             ramData <= Data;
+                            storeReady <= false;
+                            state <= "11";
+                        when "11" =>
+                            state <= "00";
                             storeReady <= true;
-                            state <= '0';
                         when others => 
                             null;
                     end case;

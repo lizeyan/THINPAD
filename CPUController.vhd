@@ -184,11 +184,10 @@ architecture Behavioral of CPUController is
 begin
     
 	 clk <= clk_50;
-	 
-	 process(boot_finish)
+	 process(boot_finish, clk)
 	 begin
 		if not boot_finish then
-			boot_clk <= clk;
+			boot_clk <= clk_50;
 			ram2en <= boot_ram2en;
 			ram2oe <= boot_ram2oe;
 			ram2we <= boot_ram2we;
@@ -197,7 +196,7 @@ begin
 			cpu_clk <= '0';
 		else
 			boot_clk <= '0';
-			cpu_clk <= clk;
+			cpu_clk <= clk_50;
 			ram2en <= cpu_ram2en;
 			ram2oe <= cpu_ram2oe;
 			ram2we <= cpu_ram2we;
@@ -224,13 +223,13 @@ begin
                     when "01" => -- wait for reading
                         if load_ready then -- read over
                             flash_read <= false;
-                            ram2_write <= true;
                             state <= "10";
                         else
                             state <= "01";
                         end if;
                     when "10" => -- write
                         if store_ready then
+                            ram2_write <= true;
                             ram2_data <= flash_dataout;
                             ram2_addr <= addr_count;
                             state <= "11";
@@ -239,8 +238,6 @@ begin
                         end if;
                     when "11" =>
                         if store_ready then -- write over
-                            ram2_write <= false;
-                            flash_read <= true;
                             addr_count <= addr_count + 1;
                             state <= "00";
                         else
