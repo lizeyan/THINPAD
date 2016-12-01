@@ -23,14 +23,23 @@ use IEEE.std_logic_arith.all;
 use IEEE.std_logic_unsigned.all;
 
 entity VGAController is
-    Port ( clk : in STD_LOGIC;
-           rst : in STD_LOGIC;
-           InputSW : in STD_LOGIC_VECTOR(15 downto 0);
-           Hs : out STD_LOGIC;
-           Vs : out STD_LOGIC;
-           R : out STD_LOGIC_VECTOR(2 downto 0);
-           G : out STD_LOGIC_VECTOR(2 downto 0);
-           B : out STD_LOGIC_VECTOR(2 downto 0);
+    Port ( clk : in std_logic;  -- 50 MHz
+           rst : in std_logic;
+           clr : in std_logic;
+           
+--           InputSW : in std_logic_vector(15 downto 0);
+           Hs : out std_logic;
+           Vs : out std_logic;
+           R : out std_logic_vector(2 downto 0);
+           G : out std_logic_vector(2 downto 0);
+           B : out std_logic_vector(2 downto 0);
+           
+           ps2clk : in std_logic;
+           ps2data : in std_logic;
+           
+           lxh_wen : in std_logic_vector(0 downto 0);
+           lxh_addr : in std_logic_vector(12 downto 0);
+           lxh_data : in std_logic_vector(15 downto 0);
            
            R0 : in std_logic_vector(15 downto 0);
            R1 : in std_logic_vector(15 downto 0);
@@ -47,10 +56,8 @@ entity VGAController is
            PC_RF_PC : in std_logic_vector(15 downto 0);
            IF_RF_INS : in std_logic_vector(15 downto 0);
            
-           MEM_RF_Res : in std_logic_vector(15 downto 0) := "0000000000000000";
-           EXE_RF_Res : in std_logic_vector(15 downto 0) := "0000000000000000"
-           
-           );
+           MEM_RF_Res : in std_logic_vector(15 downto 0);
+           EXE_RF_Res : in std_logic_vector(15 downto 0));
 end VGAController;
 
 architecture Behavioral of VGAController is
@@ -61,9 +68,13 @@ architecture Behavioral of VGAController is
     end component;
     
     component lxh_mem is
-        Port ( clkA : in std_logic;
+        Port ( wea : in std_logic_vector(0 downto 0);
                AddrA : in std_logic_vector(12 downto 0);
-               DoutA : out std_logic_vector(15 downto 0));
+               DinA : in std_logic_vector(15 downto 0);
+               clkA : in std_logic;
+               AddrB : in std_logic_vector(12 downto 0);
+               DoutB : out std_logic_vector(15 downto 0);
+               clkB : in std_logic);
     end component;
     
     component zz_mem is
@@ -150,12 +161,12 @@ architecture Behavioral of VGAController is
 
     
     -- CPU
-    signal R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T, PC : std_logic_vector(15 downto 0) := x"BF01";
-    signal IF_RF_Ins, EXE_RF_Res, MEM_RF_Res : std_logic_vector(15 downto 0) := x"691A";
+--    signal R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T, PC : std_logic_vector(15 downto 0) := x"BF01";
+--    signal IF_RF_Ins, EXE_RF_Res, MEM_RF_Res : std_logic_vector(15 downto 0) := x"691A";
     signal newR, newDel, doDel : std_logic := '0';
 begin
     
-    LED <= mode;
+--    LED <= mode;
     
     clk1 <= ps2clk when rising_edge(clk);
     clk2 <= clk1 when rising_edge(clk);
@@ -886,13 +897,13 @@ begin
                         elsif cnt_10=155 then
                             transData <= x"20";  -- space
                         elsif cnt_10=156 then
-                            transData <= get_ascii(PC(15 downto 12));
+                            transData <= get_ascii(PC_RF_PC(15 downto 12));
                         elsif cnt_10=157 then
-                            transData <= get_ascii(PC(11 downto 8));
+                            transData <= get_ascii(PC_RF_PC(11 downto 8));
                         elsif cnt_10=158 then
-                            transData <= get_ascii(PC(7 downto 4));
+                            transData <= get_ascii(PC_RF_PC(7 downto 4));
                         elsif cnt_10=159 then
-                            transData <= get_ascii(PC(3 downto 0));
+                            transData <= get_ascii(PC_RF_PC(3 downto 0));
                         end if;
                         
                         if cnt_10=0 then
@@ -1025,9 +1036,13 @@ begin
     
     Process_LXH_MEM: lxh_mem
     port map (
+        wea => lxh_wen,
+        AddrA => lxh_addr,
+        DinA => lxh_data,
         clkA => clk,
-        AddrA => pic_addr,
-        DoutA => lxh_pr
+        AddrB => pic_addr,
+        DoutB => lxh_pr,
+        clkB => clk
     );
     
     Process_ZZ_MEM: zz_mem
@@ -1277,7 +1292,7 @@ begin
                                 else
                                     tempR <= (others => '0');
                                 end if;
-                                tempG <= print_register(PC);
+                                tempG <= print_register(PC_RF_PC);
                             elsif y>=290 and y<300 then
                                 if x>=30 and x<50 then
                                     tempR <= half;

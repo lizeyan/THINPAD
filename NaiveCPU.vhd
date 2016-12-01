@@ -24,7 +24,7 @@ use IEEE.std_logic_unsigned.all;
 
 entity NaiveCPU is
     Port ( clk_in : in STD_LOGIC;
-			  clk_50 : in STD_LOGIC;
+           clk_50 : in STD_LOGIC;
            rst : in STD_LOGIC;
            InputSW : in STD_LOGIC_VECTOR(15 downto 0);
            
@@ -64,7 +64,11 @@ entity NaiveCPU is
            Vs : out STD_LOGIC;
            R : out STD_LOGIC_VECTOR(2 downto 0);
            G : out STD_LOGIC_VECTOR(2 downto 0);
-           B : out STD_LOGIC_VECTOR(2 downto 0));
+           B : out STD_LOGIC_VECTOR(2 downto 0);
+           -- PS2
+           ps2clk : in std_logic;
+           ps2data : in std_logic
+           );
 end NaiveCPU;
 
 architecture Behavioral of NaiveCPU is
@@ -393,6 +397,11 @@ architecture Behavioral of NaiveCPU is
                EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
                alures : in std_logic_vector (15 downto 0);
                MEM_LW : out STD_LOGIC_VECTOR(15 downto 0);
+               
+               vga_en : out std_logic_vector(0 downto 0);
+               vga_addr : out std_logic_vector(12 downto 0);
+               vga_data : out std_logic_vector(15 downto 0);
+               
                --DEBUG
 					state_out: out std_logic_vector (3 downto 0);
                -- IF & MEM
@@ -473,14 +482,23 @@ architecture Behavioral of NaiveCPU is
     
     --  Controller
     component VGAController
-        Port ( clk : in STD_LOGIC;  -- 25 MHz
-               rst : in STD_LOGIC;
-               InputSW : in STD_LOGIC_VECTOR(15 downto 0);
-               Hs : out STD_LOGIC;
-               Vs : out STD_LOGIC;
-               R : out STD_LOGIC_VECTOR(2 downto 0);
-               G : out STD_LOGIC_VECTOR(2 downto 0);
-               B : out STD_LOGIC_VECTOR(2 downto 0);
+        Port ( clk : in std_logic;  -- 50 MHz
+               rst : in std_logic;
+               clr : in std_logic;
+               
+    --           InputSW : in std_logic_vector(15 downto 0);
+               Hs : out std_logic;
+               Vs : out std_logic;
+               R : out std_logic_vector(2 downto 0);
+               G : out std_logic_vector(2 downto 0);
+               B : out std_logic_vector(2 downto 0);
+               
+               ps2clk : in std_logic;
+               ps2data : in std_logic;
+               
+               lxh_wen : in std_logic_vector(0 downto 0);
+               lxh_addr : in std_logic_vector(12 downto 0);
+               lxh_data : in std_logic_vector(15 downto 0);
                
                R0 : in std_logic_vector(15 downto 0);
                R1 : in std_logic_vector(15 downto 0);
@@ -493,10 +511,12 @@ architecture Behavioral of NaiveCPU is
                IH : in std_logic_vector(15 downto 0);
                SP : in std_logic_vector(15 downto 0);
                T : in std_logic_vector(15 downto 0);
-					
-					PC_RF_PC : in std_logic_vector(15 downto 0);
-					IF_RF_INS : in std_logic_vector(15 downto 0)
-					);
+               
+               PC_RF_PC : in std_logic_vector(15 downto 0);
+               IF_RF_INS : in std_logic_vector(15 downto 0);
+               
+               MEM_RF_Res : in std_logic_vector(15 downto 0);
+               EXE_RF_Res : in std_logic_vector(15 downto 0));
     end component;
     
 	 signal boot_finish : boolean := false;
@@ -635,6 +655,12 @@ architecture Behavioral of NaiveCPU is
     signal SP : std_logic_vector(15 downto 0);
     signal T : std_logic_vector(15 downto 0);
     signal clk_source : STD_LOGIC;
+    
+    -- VGA LXH picture
+    signal vga_wen : std_logic_vector(0 downto 0) := (others => '0');
+    signal vga_addr : std_logic_vector(12 downto 0) := (others => '0');
+    signal vga_data : std_logic_vector(15 downto 0) := (others => '0');
+    
 begin
     ledlights(2) <= dataready;
     ledlights(1) <= tbre;
@@ -968,6 +994,11 @@ begin
         EXE_RF_Res => EXE_RF_Res,
         alures => alures,
         MEM_LW => MEM_LW,
+        
+        vga_en => vga_wen,
+        vga_addr => vga_addr,
+        vga_data => vga_data,
+        
         flash_byte => flash_byte,
 		  flash_vpen => flash_vpen,
 		  flash_ce => flash_ce,
@@ -1056,14 +1087,23 @@ begin
     
     Process_VGAController: VGAController
     port map (
-        clk => clk_25,
+        clk => clk_50,
         rst => rst,
-        InputSW => InputSW,
+        clr => clk_in,
+        
         Hs => Hs,
         Vs => Vs,
         R => R,
         G => G,
         B => B,
+        
+        ps2clk => ps2clk,
+        ps2data => ps2data,
+        
+        lxh_wen => vga_wen,
+        lxh_addr => vga_addr,
+        lxh_data => vga_data,
+        
         
         R0 => R0,
         R1 => R1,
@@ -1076,9 +1116,10 @@ begin
         IH => IH,
         SP => SP,
         T => T,
-		  
-		  PC_RF_PC => PC_RF_PC,
-		  IF_RF_Ins => IF_RF_Ins
---         R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T : in STD_LOGIC_VECTOR(15 downto 0)
+        
+        PC_RF_PC => PC_RF_PC,
+        IF_RF_Ins => IF_RF_Ins,
+        MEM_RF_Res => MEM_RF_Res,
+        EXE_RF_Res => EXE_RF_Res
     );
 end Behavioral;

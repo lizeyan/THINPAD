@@ -188,3 +188,8 @@ NET "flash_oe" LOC = E1;
 NET "flash_rp" LOC = D1;
 NET "flash_vpen" LOC = C2;
 NET "flash_we" LOC = D4;
+
+
+NET "ps2clk" LOC = U6;
+NET "ps2data" LOC = V6;
+NET "ps2clk" CLOCK_DEDICATED_ROUTE = FALSE;

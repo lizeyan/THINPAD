@@ -38,7 +38,9 @@ entity MemUart is
            EXE_RF_Res : in STD_LOGIC_VECTOR(15 downto 0);
            ALUres: in std_logic_vector (15 downto 0); --look ahead of exe_rf_res
            MEM_LW : out STD_LOGIC_VECTOR(15 downto 0);
-           
+           vga_en: out std_logic_vector(0 downto 0);
+           vga_data : out std_logic_vector (15 downto 0);
+           vga_addr : out std_logic_vector (12 downto 0);
            -- IF & MEM
            -- 0 read; 1 write
            RamRWOp : in std_logic; --ÄÚ´æ¶ÁÐ´
@@ -260,6 +262,18 @@ begin
 		end if;
 	end process;
     
+    process (clk)
+    begin
+        if rising_edge(clk) then
+            if (state = '1' and exe_rf_res(15 downto 13) = "111" and ramrwop = '1' and mem_en = '1')then --write vga
+                vga_en <= "1";
+                vga_addr <= exe_rf_res (12 downto 0);
+                vga_data <= mem_sw_data;
+            else
+                vga_en <= "0";
+            end if;
+        end if;
+    end process;
     process (state, exe_rf_res, ramrwop, mem_en, pc_rf_pc, clk, mem_sw_data, boot_finish, state_boot, data_temp)
     begin
 			if boot_finish then
