@@ -412,6 +412,7 @@ architecture Behavioral of NaiveCPU is
     component PC_RF
         Port ( clk : in std_logic;
                rst : in std_logic;
+               int : in STD_LOGIC;
                PC_RFOp : in std_logic_vector(2 downto 0);  -- 00 for PDTPC, 01 for IDPC, 10 for WE_down, 11 for EX
                PC_RFWE : in std_logic;
                IDPC : in std_logic_vector(15 downto 0);
@@ -685,7 +686,11 @@ begin
         clkin_in => clk_50,
         clkfx_out => clk_source
     );
-    
+--    Process_ClockModule_1: ClockModule
+--    port map (
+--        clk_in => clk_50,
+--        clk_16 => clk_source
+--    );
     Process_ClockModule: ClockModule
     port map (
         clk_in => clk_source,
@@ -971,6 +976,7 @@ begin
     port map (
         clk => clk_2,
         rst => rst,
+        int => int,
         PC_RFOp => PC_RFOp,
         PC_RFWE => PC_RFWE,
         IDPC => IDPC,

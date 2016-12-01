@@ -30,6 +30,7 @@ use IEEE.std_logic_unsigned.all;
 entity PC_RF is
     Port ( clk : in std_logic;
            rst: in std_logic;
+           int : in STD_LOGIC;
            PC_RFOp : in std_logic_vector(2 downto 0);
            PC_RFWE: in std_logic;
            IDPC : in std_logic_vector(15 downto 0);
@@ -49,18 +50,22 @@ begin
         if rst = '0' then
             pc <= "0000000000000000";
         elsif clk'event and clk='1' and pc_rfwe = '1' then
-            case PC_RFOp is
-                when "000" => 
-                    pc <= PDTPC;
-                when "001" => 
-                    pc <= IDPC;
-                when "010" => 
-                    pc <= "0000000000000101";
-                when "011" => 
-                    pc <= EXE_RES_PC;
-                when others => 
-                    null;
-            end case;
+            if int = '1' then
+                pc <= "0000000000000101";
+            else
+                case PC_RFOp is
+                    when "000" => 
+                        pc <= PDTPC;
+                    when "001" => 
+                        pc <= IDPC;
+                    when "010" => 
+                        pc <= "0000000000000101";
+                    when "011" => 
+                        pc <= EXE_RES_PC;
+                    when others => 
+                        null;
+                end case;
+            end if;
         end if;
     end process;
 end Behavioral;

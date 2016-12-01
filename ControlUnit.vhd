@@ -661,14 +661,14 @@ begin
 					when others =>
 				end case;
 				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
-			when "11111" => --int
-				if_rfop <= "00";
-				id_rfop <= "00";
-                if if_rf_st (10 downto 4) = "0000000" then
-                    pc_rfwe <= '0';
-                else
-                    pc_rfwe <= '1';
-                end if;
+--			when "11111" => --int
+--				if_rfop <= "00";
+--				id_rfop <= "00";
+--                if if_rf_st (10 downto 4) = "0000000" then
+--                    pc_rfwe <= '0';
+--                else
+--                    pc_rfwe <= '1';
+--                end if;
 			when others =>
 				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 		end case;
@@ -778,8 +778,6 @@ begin
 			pc_src_id <= "001";
 		elsif if_rf_st(15 downto 11) = "11101" and if_rf_st(7 downto 0) = "00000000" and idpc /= pc_rf_pc then --jr
 			pc_src_id <= "001";
-        elsif if_rf_st = "1111100000010000" then
-            pc_src_id <= "010";
 		else
 			pc_src_id <= "000";
 		end if;

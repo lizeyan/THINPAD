@@ -50,10 +50,12 @@ begin
     
     process(clk)
     begin
-        if clk'event and clk='1' then
+        if rising_edge (clk) then
             if int = '1' then
                 imm <= pc;
                 ins <= "1111100000010000";
+                pc <= RF_PC_IN;
+                opc <= RF_OPC_IN;
             elsif IF_RFOp="11" then
                 imm <= "0000000000000000";
                 ins <= "0000100000000000";

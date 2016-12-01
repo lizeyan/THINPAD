@@ -40,7 +40,7 @@ architecture Behavioral of ClockModule is
     signal tempClk16 : STD_LOGIC := '0';
 	 signal tempClk1k : STD_LOGIC := '0';
 	 
-	 signal cnt : INTEGER range 0 to 65535*2 := 0;
+	 signal cnt : INTEGER range 0 to 1024*1024*4 := 0;
 begin
     clk <= clk_in;
     clk_2 <= tempClk2;
@@ -52,7 +52,7 @@ begin
 	 begin
 		if clk_in'event and clk_in='1' then
             cnt <= cnt + 1;
-            if cnt=100000 then
+            if cnt=2000000 then
                 cnt <= 0;
                 tempClk1k <= not tempClk1k;
             end if;
