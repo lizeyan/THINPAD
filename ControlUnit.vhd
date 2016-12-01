@@ -479,18 +479,18 @@ begin
 --														signal id_rf_op, exe_rf_op: in std_logic_vector (4 downto 0);
 													  last_rd, last_lw_rd, last_last_lw_rd: out boolean) is
 		begin
-			last_rd := (id_rf_rd = x) and (x /= "1111");
-			last_lw_rd := ( (id_rf_rd = x) and (id_rf_op = "10011" or id_rf_op = "10010")  and (x /= "1111"));
-			last_last_lw_rd := ( (exe_rf_op = "10011" or exe_rf_op = "10010") and exe_rf_rd = x  and (x /= "1111"));
+			last_rd := (id_rf_rd = x and x /= "1111");
+			last_lw_rd := ( (id_rf_rd = x and x /= "1111") and (id_rf_op = "10011" or id_rf_op = "10010") );
+			last_last_lw_rd := ( (exe_rf_op = "10011" or exe_rf_op = "10010") and exe_rf_rd = x and x /= "1111");
 		end data_conflict;
 		procedure data_conflict (x, y: in std_logic_vector(3 downto 0);
 --														signal id_rf_rd, exe_rf_rd: in std_logic_vector (3 downto 0);
 --														signal id_rf_op, exe_rf_op: in std_logic_vector (4 downto 0);
 													  last_rd, last_lw_rd, last_last_lw_rd: out boolean) is
 		begin
-			last_rd := ((id_rf_rd = x and (x /= "1111")) or (id_rf_rd = y and (y /= "1111")));
-			last_lw_rd := (id_rf_rd = x or id_rf_rd = y) and (id_rf_op = "10011" or id_rf_op = "10010");
-			last_last_lw_rd := (exe_rf_op = "10011" or exe_rf_op = "10010") and ((exe_rf_rd = x  and (x /= "1111")) or (exe_rf_rd = y and (x /= "1111")));
+			last_rd := ((id_rf_rd = x and x /= "1111") or (id_rf_rd = y and y /= "1111"));
+			last_lw_rd := ((id_rf_rd = x and x /= "1111") or (id_rf_rd = y and y /= "1111")) and (id_rf_op = "10011" or id_rf_op = "10010");
+			last_last_lw_rd := (exe_rf_op = "10011" or exe_rf_op = "10010") and ((exe_rf_rd = x and x /= "1111") or (exe_rf_rd = y and y /= "1111"));
 		end data_conflict;
 		procedure normal_ins(last_rd, last_lw_rd, last_last_lw_rd, nn_written_st, n_written_st, target_failed: in boolean) is
 		begin

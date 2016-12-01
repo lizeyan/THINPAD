@@ -32,7 +32,7 @@ entity NaiveCPU is
            Addr1 : out STD_LOGIC_VECTOR(15 downto 0);
            Addr2 : out STD_LOGIC_VECTOR(15 downto 0);
            Data1 : inout STD_LOGIC_VECTOR(15 downto 0);  -- low 8 digits for Uart
-           Data2 : inout STD_LOGIC_VECTOR(15 downto 0);
+			  Data2 : inout STD_LOGIC_VECTOR(15 downto 0);
            Ram1EN : out STD_LOGIC;
            Ram1OE : out STD_LOGIC;
            Ram1WE : out STD_LOGIC;
@@ -44,6 +44,15 @@ entity NaiveCPU is
            DataReady : in STD_LOGIC;
            Tbre : in STD_LOGIC;
            Tsre : in STD_LOGIC;
+			  ------FLASH----------------
+			  flash_byte : out std_logic;
+           flash_vpen : out std_logic;
+           flash_ce : out std_logic;
+           flash_oe : out std_logic;
+           flash_we : out std_logic;
+           flash_rp : out std_logic;
+           flash_addr : out std_logic_vector(22 downto 1) := (others => '0');
+           flash_data : inout std_logic_vector(15 downto 0) := (others => 'Z');
            
            -- Digit 7 Lights
            Digit7Left : out STD_LOGIC_VECTOR(6 downto 0);
@@ -373,6 +382,7 @@ architecture Behavioral of NaiveCPU is
     component MemUart
         Port ( clk : in STD_LOGIC;
                rst : in STD_LOGIC;
+					boot_finish_out: out boolean;
                
                -- IF
                PC_RF_PC : in STD_LOGIC_VECTOR(15 downto 0);
@@ -390,6 +400,15 @@ architecture Behavioral of NaiveCPU is
                mem_en_lh : in std_logic;
                RamRWOp : in std_logic;  -- (1) for Ram1, (0) for Ram2; 0 for R, 1 for W
                ramrwop_lh : in std_logic;
+				  ------FLASH----------------
+				  flash_byte : out std_logic;
+				  flash_vpen : out std_logic;
+				  flash_ce : out std_logic;
+				  flash_oe : out std_logic;
+				  flash_we : out std_logic;
+				  flash_rp : out std_logic;
+				  flash_addr : out std_logic_vector(22 downto 1) := (others => '0');
+				  flash_data : inout std_logic_vector(15 downto 0) := (others => 'Z');
                
                Addr1 : out STD_LOGIC_VECTOR(15 downto 0);
                Addr2 : out STD_LOGIC_VECTOR(15 downto 0);
@@ -413,6 +432,7 @@ architecture Behavioral of NaiveCPU is
         Port ( clk : in std_logic;
                rst : in std_logic;
                int : in STD_LOGIC;
+					boot_finish: in boolean;
                PC_RFOp : in std_logic_vector(2 downto 0);  -- 00 for PDTPC, 01 for IDPC, 10 for WE_down, 11 for EX
                PC_RFWE : in std_logic;
                IDPC : in std_logic_vector(15 downto 0);
@@ -479,6 +499,7 @@ architecture Behavioral of NaiveCPU is
 					);
     end component;
     
+	 signal boot_finish : boolean := false;
     -- Clock Signals
 	 -- ��clockmodule���ɣ����ӵ�����component
 	 signal clk: STD_LOGIC;
@@ -940,14 +961,21 @@ begin
         clk => clk,
         rst => '1',
         mem_sw_data => mem_sw_data,
-        
+        boot_finish_out => boot_finish,
         PC_RF_PC => PC_RF_PC,
         IF_Ins => IF_Ins,
         
         EXE_RF_Res => EXE_RF_Res,
         alures => alures,
         MEM_LW => MEM_LW,
-        
+        flash_byte => flash_byte,
+		  flash_vpen => flash_vpen,
+		  flash_ce => flash_ce,
+		  flash_oe => flash_oe,
+		  flash_we => flash_we,
+		  flash_rp => flash_rp,
+		  flash_addr => flash_addr,
+		  flash_data => flash_data,
         RamRWOp => EXE_RF_RamRWOp,
         ramrwop_lh => id_rf_ramrwop,
         mem_en => exe_rf_memen,
@@ -977,6 +1005,7 @@ begin
         clk => clk_2,
         rst => rst,
         int => int,
+		  boot_finish => boot_finish,
         PC_RFOp => PC_RFOp,
         PC_RFWE => PC_RFWE,
         IDPC => IDPC,
