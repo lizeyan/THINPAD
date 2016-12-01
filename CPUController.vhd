@@ -118,6 +118,17 @@ architecture Behavioral of CPUController is
                G : out STD_LOGIC_VECTOR(2 downto 0);
                B : out STD_LOGIC_VECTOR(2 downto 0));
     end component;
+	 
+	 component ClockModule
+		 Port ( clk_in : in STD_LOGIC;
+				  
+				  clk : out STD_LOGIC;
+				  clk_2 : out STD_LOGIC;
+				  clk_4 : out STD_LOGIC;
+				  clk_8 : out STD_LOGIC;
+				  clk_16 : out STD_LOGIC;
+				 clk_1k : out STD_LOGIC);
+	end component;
         
     signal boot_ram2en : std_logic;
     signal cpu_ram2en : std_logic;
@@ -130,7 +141,7 @@ architecture Behavioral of CPUController is
     signal boot_data2 : std_logic_vector(15 downto 0);
     signal cpu_data2 : std_logic_vector(15 downto 0);
     
-	signal clk : std_logic;
+	signal clk, clk_ori, clk_2, clk_4, clk_8, clk_16, clk_1k : std_logic;
     signal boot_clk : std_logic;
     signal cpu_clk : std_logic;
 	 
@@ -148,11 +159,11 @@ architecture Behavioral of CPUController is
     
 begin
     
-	 clk <= clk_50;
+	 clk <= clk_8;
 	 process(boot_finish, clk)
 	 begin
 		if not boot_finish then
-			boot_clk <= clk_50;
+			boot_clk <= clk;
 			ram2en <= boot_ram2en;
 			ram2oe <= boot_ram2oe;
 			ram2we <= boot_ram2we;
@@ -161,7 +172,7 @@ begin
 			cpu_clk <= '0';
 		else
 			boot_clk <= '0';
-			cpu_clk <= clk_50;
+			cpu_clk <= clk;
 			ram2en <= cpu_ram2en;
 			ram2oe <= cpu_ram2oe;
 			ram2we <= cpu_ram2we;
@@ -174,16 +185,25 @@ begin
      flash_vpen <= '1';
      flash_ce <= '0';
      flash_rp <= '1';
+	  
+	  ledlights <= data_temp;
+	  digit7right(6) <= cpu_clk;
+	  digit7right(0) <= not cpu_clk;
+	  digit7right(5 downto 1) <= "00000";
      
-	 process(clk)
+	 process(clk, rst)
 	 begin
-		if(clk'event and clk='1') then
-			if addr_count < x"0005" then -- boot
+		if rst = '0' then
+			boot_finish <= false;
+			addr_count <= (others => '0');
+			state <= "0000";
+		elsif(clk'event and clk='1') then
+			if addr_count < x"0300" then -- boot
 				boot_finish <= false;
 				case state is
                     when "0000" => -- read
                         flash_we <= '0';
-                        flash_data <= "0000000011111111";
+                        flash_data <= x"00FF";
                         state <= "0001";
                     when "0001" => 
                         flash_we <= '1';
@@ -191,7 +211,7 @@ begin
                     when "0010" =>
                         flash_oe <= '0';
                         flash_addr <= "000000"&addr_count;
-                        flash_data <= (others => '0');
+                        flash_data <= (others => 'Z');
                         state <= "0011";
                     when "0011" =>
                         data_temp <= flash_data;
@@ -248,9 +268,9 @@ begin
 
         -- Digit 7 Lights
         Digit7Left => Digit7Left,
-        DIgit7Right => Digit7Right,
+        --DIgit7Right => Digit7Right,
         -- LED LIGHTS
-        ledlights => ledlights,
+        --ledlights => ledlights,
         -- VGA
         Hs => Hs,
         Vs => Vs,
@@ -259,7 +279,16 @@ begin
         B => B
     );
 	 
-     
+     Process_ClockModule : ClockModule
+	  port map (
+			clk_in => clk_50,
+			clk => clk_ori,
+			clk_2 => clk_2,
+			clk_4 => clk_4,
+			clk_8 => clk_8,
+			clk_16 => clk_16,
+			clk_1k => clk_1k
+	  );
      
 --    component Flash
 --        Port ( address : in std_logic_vector(22 downto 1);  -- 22 downto 1 ?
