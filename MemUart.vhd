@@ -156,6 +156,7 @@ begin
 				end case;
             elsif (state /= '0' and exe_rf_res(15) = '0' and ramrwop = '0' and mem_en = '1')
                 or (state = '0' and alures(15) = '0' and ramrwop_lh = '0' and mem_en_lh = '1') then --read ram2
+				ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
 				uartrdn <= '1';
                 uartwrn <= '1';
                 case state is
@@ -169,6 +170,7 @@ begin
                 end case;
             elsif (state /= '0' and exe_rf_res(15) = '0' and ramrwop = '1' and mem_en = '1')
                 or (state = '0' and alures(15) = '0' and ramrwop_lh = '1' and mem_en_lh = '1') then --write ram2
+				ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
                 case state is
                     when '0' =>
                         addr2 <= alures;
@@ -178,6 +180,7 @@ begin
                         addr2 <= pc_rf_pc;
                 end case;
 			else
+				ram1en <= '1';		ram1we <= '1';		ram1oe <= '1';
 				uartrdn <= '1';
                 uartwrn <= '1';
                 data1 <= "ZZZZZZZZZZZZZZZZ";
