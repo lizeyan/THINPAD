@@ -217,7 +217,7 @@ begin
 				end if;
 				state <= not state;
 			else
-				if addr_count < x"0300" then -- boot
+				if addr_count < x"3FFF" then -- boot
 					boot_clock_cnt <= boot_clock_cnt + 1;
 					if boot_clock_cnt = "00000000" then
 						boot_finish <= false;

@@ -24,12 +24,13 @@ use IEEE.std_logic_unsigned.all;
 
 -- 选择写回寄存器的数据
 -- 00 res
--- 11 ILLEGAL
+-- 11 !flagZero
 -- 01 lw
 -- 10 flag_sign
 entity RegWrbModule is
     Port ( RegWrbOp : in STD_LOGIC_VECTOR(1 downto 0);
            RegWrbOut : out STD_LOGIC_VECTOR(15 downto 0);
+           MEM_RF_Flagzero : in STD_LOGIC;
            
            MEM_RF_FlagSign : in STD_LOGIC;
            MEM_RF_LW : in STD_LOGIC_VECTOR(15 downto 0);
@@ -47,8 +48,10 @@ begin
 					regwrbout <= mem_rf_lw;
 				when "10" =>
 					regwrbout <= "000000000000000" & mem_rf_flagsign;
-				when others =>
-					regwrbout <= "1111111111111111";
+				when "11" =>
+                    regwrbout <= "000000000000000" & (not mem_rf_flagzero);
+                when others=>
+                    regwrbout <= "0000000000000000";
 			end case;
 		end process;
 

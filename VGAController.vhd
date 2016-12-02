@@ -37,9 +37,9 @@ entity VGAController is
            ps2clk : in std_logic;
            ps2data : in std_logic;
            
-           lxh_wen : in std_logic_vector(0 downto 0);
-           lxh_addr : in std_logic_vector(12 downto 0);
-           lxh_data : in std_logic_vector(15 downto 0);
+           zz_wen : in std_logic_vector(0 downto 0);
+           zz_addr : in std_logic_vector(12 downto 0);
+           zz_data : in std_logic_vector(15 downto 0);
            
            R0 : in std_logic_vector(15 downto 0);
            R1 : in std_logic_vector(15 downto 0);
@@ -68,6 +68,12 @@ architecture Behavioral of VGAController is
     end component;
     
     component lxh_mem is
+        Port ( clkA : in std_logic;
+               AddrA : in std_logic_vector(12 downto 0);
+               DoutA : out std_logic_vector(15 downto 0));
+    end component;
+    
+    component zz_mem is
         Port ( wea : in std_logic_vector(0 downto 0);
                AddrA : in std_logic_vector(12 downto 0);
                DinA : in std_logic_vector(15 downto 0);
@@ -75,12 +81,6 @@ architecture Behavioral of VGAController is
                AddrB : in std_logic_vector(12 downto 0);
                DoutB : out std_logic_vector(15 downto 0);
                clkB : in std_logic);
-    end component;
-    
-    component zz_mem is
-        Port ( clkA : in std_logic;
-               AddrA : in std_logic_vector(12 downto 0);
-               DoutA : out std_logic_vector(15 downto 0));
     end component;
 
     component fifo_mem is
@@ -161,12 +161,12 @@ architecture Behavioral of VGAController is
 
     
     -- CPU
---    signal R0, R1, R2, R3, R4, R5, R6, R7, IH, SP, T, PC : std_logic_vector(15 downto 0) := x"BF01";
---    signal IF_RF_Ins, EXE_RF_Res, MEM_RF_Res : std_logic_vector(15 downto 0) := x"691A";
     signal newR, newDel, doDel : std_logic := '0';
-begin
     
---    LED <= mode;
+    signal edit, newnum, numcmd : std_logic := '0';
+    signal numbuffer : integer range 0 to 9 := 0;
+    signal vimcmd : std_logic_vector(7 downto 0) := (others => '0');
+begin
     
     clk1 <= ps2clk when rising_edge(clk);
     clk2 <= clk1 when rising_edge(clk);
@@ -184,6 +184,7 @@ begin
         return std_logic_vector is
             variable temp_ascii : std_logic_vector(7 downto 0) := (others => '0');
         begin
+            ttd := (others => '0');
             case input is
                 when x"0" => 
                     temp_ascii := x"30";
@@ -377,6 +378,7 @@ begin
                         when others => 
                             ps2ready <= "0";
                             invalid := '1';
+                            ttd := x"00";
                     end case;
                     
                     
@@ -537,41 +539,124 @@ begin
                     -- Note: This 'if mode=3' statement constraints addr change, so only these things can be placed above.
                     --       Other changes such as caps, should be written explicitly here. 
                     if mode=3 then
-                        if code=x"1F" or code=x"27" then  -- Left GUI, Right GUI  -- CMD Registers
-                            ps2ready <= "0";
-                            newR <= '1';
-                            tempAddr := rcdAddr + 1;
-                            if tempAddr(6 downto 0)>=80 then
-                                tempAddr(6 downto 0) := (others => '0');
-                                tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
-                            end if;
-                            if tempAddr(11 downto 7)>=30 then
-                                tempAddr(11 downto 7) := (others => '0');
-                            end if;
-                        elsif code=x"58" or code=x"12" or code=x"59" then  -- CAPS, Left Shift, Right Shift
-                            caps <= not caps;
-                        end if;
-                        if code=x"71" then  -- Del
-                            if newDel='1' then
-                                doDel <= '1';
+                    
+                        if code=x"76" then
+                            edit <= not edit;
+                        elsif edit='1' then
+                    
+                            if code=x"1F" or code=x"27" then  -- Left GUI, Right GUI  -- CMD Registers
                                 ps2ready <= "0";
-                                newDel <= '0';
-                                tempAddr := rcdAddr;
-                                if tempAddr(6 downto 0)=79 then
+                                newR <= '1';
+                                tempAddr := rcdAddr + 1;
+                                if tempAddr(6 downto 0)>=80 then
                                     tempAddr(6 downto 0) := (others => '0');
-                                    if tempAddr(11 downto 7)=29 then
-                                        tempAddr(11 downto 7) := (others => '0');
-                                    else
-                                        tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
+                                    tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
+                                end if;
+                                if tempAddr(11 downto 7)>=30 then
+                                    tempAddr(11 downto 7) := (others => '0');
+                                end if;
+                            elsif (code=x"58" or code=x"12" or code=x"59") and edit='1' then  -- CAPS, Left Shift, Right Shift
+                                caps <= not caps;
+                            end if;
+                            if code=x"71" then  -- Del
+                                if newDel='1' then
+                                    doDel <= '1';
+                                    ps2ready <= "0";
+                                    newDel <= '0';
+                                    tempAddr := rcdAddr;
+                                    if tempAddr(6 downto 0)=79 then
+                                        tempAddr(6 downto 0) := (others => '0');
+                                        if tempAddr(11 downto 7)=29 then
+                                            tempAddr(11 downto 7) := (others => '0');
+                                        else
+                                            tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
+                                        end if;
                                     end if;
+                                else
+                                    newDel <= '1';
                                 end if;
                             else
-                                newDel <= '1';
+                                newDel <= '0';
                             end if;
-                        else
-                            newDel <= '0';
+                            
+                            rcdAddr <= tempAddr;
+                            
+                        elsif edit='0' then
+                        
+                            ps2ready <= "0";
+                            if ttd>=x"30" and ttd<=x"39" then
+                                case ttd is
+                                    when x"30" => numbuffer <= 0;
+                                    when x"31" => numbuffer <= 1;
+                                    when x"32" => numbuffer <= 2;
+                                    when x"33" => numbuffer <= 3;
+                                    when x"34" => numbuffer <= 4;
+                                    when x"35" => numbuffer <= 5;
+                                    when x"36" => numbuffer <= 6;
+                                    when x"37" => numbuffer <= 7;
+                                    when x"38" => numbuffer <= 8;
+                                    when x"39" => numbuffer <= 9;
+                                    when others => null;
+                                end case;
+                                newnum <= '1';
+                            elsif newnum='1' then
+                                if ttd=x"68" or ttd=x"6A" or ttd=x"6B" or ttd=x"6C" then
+                                    vimcmd <= ttd;
+                                    numcmd <= '1';
+                                end if;
+                                newnum <= '0';
+                            else
+                                if code=x"0D" or code=x"5A" or code=x"69" or code=x"6B" or code=x"6C" or code=x"72" or code=x"74" or code=x"75" or code=x"7A" or code=x"7D" then
+                                    rcdAddr <= tempAddr;
+                                elsif ttd=x"68" then  -- H left
+                                    tempAddr := rcdAddr;
+                                    if tempAddr(6 downto 0)=0 then
+                                        tempAddr(6 downto 0) := "1001111";
+                                        if tempAddr(11 downto 7)=0 then
+                                            tempAddr(11 downto 7) := "11101";
+                                        else
+                                            tempAddr(11 downto 7) := tempAddr(11 downto 7) - 1;
+                                        end if;
+                                    elsif tempAddr(6 downto 0)<79 then
+                                        tempAddr(6 downto 0) := tempAddr(6 downto 0) - 1;
+                                    end if;
+                                    rcdAddr <= tempAddr;
+                                elsif ttd=x"6A" then  -- J down
+                                    tempAddr := rcdAddr;
+                                    if tempAddr(11 downto 7)=29 and tempAddr(6 downto 0)=79 then
+                                        tempAddr(11 downto 7) := (others => '0');
+                                    elsif tempAddr(11 downto 7)=28 and tempAddr(6 downto 0)=79 then
+                                        null;
+                                    elsif tempAddr(11 downto 7)<29 then
+                                        tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
+                                    end if;
+                                    rcdAddr <= tempAddr;
+                                elsif ttd=x"6B" then  -- K up
+                                    tempAddr := rcdAddr;
+                                    if tempAddr(11 downto 7)=0 and tempAddr(6 downto 0)=79 then
+                                        tempAddr(11 downto 7) := "11101";
+                                    elsif tempAddr(11 downto 7)=29 and tempAddr(6 downto 0)=79 then
+                                        null;
+                                    elsif tempAddr(11 downto 7)>0 then
+                                        tempAddr(11 downto 7) := tempAddr(11 downto 7) - 1;
+                                    end if;
+                                    rcdAddr <= tempAddr;
+                                elsif ttd=x"6C" then  -- L right
+                                    tempAddr := rcdAddr;
+                                    if tempAddr(6 downto 0)=79 then
+                                        tempAddr(6 downto 0) := (others => '0');
+                                        if tempAddr(11 downto 7)=29 then
+                                            tempAddr(11 downto 7) := (others => '0');
+                                        else
+                                            tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
+                                        end if;
+                                    elsif tempAddr(6 downto 0)<78 then
+                                        tempAddr(6 downto 0) := tempAddr(6 downto 0) + 1;
+                                    end if;
+                                    rcdAddr <= tempAddr;
+                                end if;
+                            end if;
                         end if;
-                        rcdAddr <= tempAddr;
                     else
                         ps2ready <= "0";
                     end if;
@@ -581,422 +666,481 @@ begin
             else
             
                 if mode=3 then
+                
+                    if edit='0' and numcmd='1' and cnt_10<10 then
+                    
+                        if cnt_10<numbuffer then
+                            if vimcmd=x"68" then  -- H left
+                                tempAddr := rcdAddr;
+                                if tempAddr(6 downto 0)=0 then
+                                    tempAddr(6 downto 0) := "1001111";
+                                    if tempAddr(11 downto 7)=0 then
+                                        tempAddr(11 downto 7) := "11101";
+                                    else
+                                        tempAddr(11 downto 7) := tempAddr(11 downto 7) - 1;
+                                    end if;
+                                elsif tempAddr(6 downto 0)<79 then
+                                    tempAddr(6 downto 0) := tempAddr(6 downto 0) - 1;
+                                end if;
+                                rcdAddr <= tempAddr;
+                            elsif vimcmd=x"6A" then  -- J down
+                                tempAddr := rcdAddr;
+                                if tempAddr(11 downto 7)=29 and tempAddr(6 downto 0)=79 then
+                                        tempAddr(11 downto 7) := (others => '0');
+                                    elsif tempAddr(11 downto 7)=28 and tempAddr(6 downto 0)=79 then
+                                        null;
+                                    elsif tempAddr(11 downto 7)<29 then
+                                        tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
+                                    end if;
+                                rcdAddr <= tempAddr;
+                            elsif vimcmd=x"6B" then  -- K up
+                                tempAddr := rcdAddr;
+                                if tempAddr(11 downto 7)=0 and tempAddr(6 downto 0)=79 then
+                                        tempAddr(11 downto 7) := "11101";
+                                    elsif tempAddr(11 downto 7)=29 and tempAddr(6 downto 0)=79 then
+                                        null;
+                                    elsif tempAddr(11 downto 7)>0 then
+                                        tempAddr(11 downto 7) := tempAddr(11 downto 7) - 1;
+                                    end if;
+                                rcdAddr <= tempAddr;
+                            elsif vimcmd=x"6C" then  -- L right
+                                tempAddr := rcdAddr;
+                                if tempAddr(6 downto 0)=79 then
+                                    tempAddr(6 downto 0) := (others => '0');
+                                    if tempAddr(11 downto 7)=29 then
+                                        tempAddr(11 downto 7) := (others => '0');
+                                    else
+                                        tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
+                                    end if;
+                                elsif tempAddr(6 downto 0)<78 then
+                                    tempAddr(6 downto 0) := tempAddr(6 downto 0) + 1;
+                                end if;
+                                rcdAddr <= tempAddr;
+                            end if;
+                            
+                        elsif cnt_10=numbuffer then
+                            numcmd <= '0';
+                        end if;
+                        
+                    else
             
-                    if newR='1' and cnt_10<=160 then
-                    
-                        if cnt_10=0 then
-                            transData <= x"52";  -- 'R'
-                        elsif cnt_10=1 then
-                            transData <= x"30";  -- '0'
-                        elsif cnt_10=2 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=3 then
-                            transData <= get_ascii(R0(15 downto 12));
-                        elsif cnt_10=4 then
-                            transData <= get_ascii(R0(11 downto 8));
-                        elsif cnt_10=5 then
-                            transData <= get_ascii(R0(7 downto 4));
-                        elsif cnt_10=6 then
-                            transData <= get_ascii(R0(3 downto 0));
-                        elsif cnt_10=7 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=8 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=9 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=10 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=11 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=12 then
-                            transData <= x"52";  -- 'R'
-                        elsif cnt_10=13 then
-                            transData <= x"31";  -- '1'
-                        elsif cnt_10=14 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=15 then
-                            transData <= get_ascii(R1(15 downto 12));
-                        elsif cnt_10=16 then
-                            transData <= get_ascii(R1(11 downto 8));
-                        elsif cnt_10=17 then
-                            transData <= get_ascii(R1(7 downto 4));
-                        elsif cnt_10=18 then
-                            transData <= get_ascii(R1(3 downto 0));
-                        elsif cnt_10=19 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=20 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=21 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=22 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=23 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=24 then
-                            transData <= x"52";  -- 'R'
-                        elsif cnt_10=25 then
-                            transData <= x"32";  -- '2'
-                        elsif cnt_10=26 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=27 then
-                            transData <= get_ascii(R2(15 downto 12));
-                        elsif cnt_10=28 then
-                            transData <= get_ascii(R2(11 downto 8));
-                        elsif cnt_10=29 then
-                            transData <= get_ascii(R2(7 downto 4));
-                        elsif cnt_10=30 then
-                            transData <= get_ascii(R2(3 downto 0));
-                        elsif cnt_10=31 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=32 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=33 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=34 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=35 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=36 then
-                            transData <= x"52";  -- 'R'
-                        elsif cnt_10=37 then
-                            transData <= x"33";  -- '3'
-                        elsif cnt_10=38 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=39 then
-                            transData <= get_ascii(R3(15 downto 12));
-                        elsif cnt_10=40 then
-                            transData <= get_ascii(R3(11 downto 8));
-                        elsif cnt_10=41 then
-                            transData <= get_ascii(R3(7 downto 4));
-                        elsif cnt_10=42 then
-                            transData <= get_ascii(R3(3 downto 0));
-                        elsif cnt_10=43 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=44 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=45 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=46 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=47 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=48 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=49 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=50 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=51 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=52 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=53 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=54 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=55 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=56 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=57 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=58 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=59 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=60 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=61 then
-                            transData <= x"49";  -- 'I'
-                        elsif cnt_10=62 then
-                            transData <= x"48";  -- 'H'
-                        elsif cnt_10=63 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=64 then
-                            transData <= get_ascii(IH(15 downto 12));
-                        elsif cnt_10=65 then
-                            transData <= get_ascii(IH(11 downto 8));
-                        elsif cnt_10=66 then
-                            transData <= get_ascii(IH(7 downto 4));
-                        elsif cnt_10=67 then
-                            transData <= get_ascii(IH(3 downto 0));
-                        elsif cnt_10=68 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=69 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=70 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=71 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=72 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=73 then
-                            transData <= x"53";  -- 'S'
-                        elsif cnt_10=74 then
-                            transData <= x"50";  -- 'P'
-                        elsif cnt_10=75 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=76 then
-                            transData <= get_ascii(SP(15 downto 12));
-                        elsif cnt_10=77 then
-                            transData <= get_ascii(SP(11 downto 8));
-                        elsif cnt_10=78 then
-                            transData <= get_ascii(SP(7 downto 4));
-                        elsif cnt_10=79 then
-                            transData <= get_ascii(SP(3 downto 0));
-                        elsif cnt_10=80 then
-                            transData <= x"52";  -- 'R'
-                        elsif cnt_10=81 then
-                            transData <= x"34";  -- '4'
-                        elsif cnt_10=82 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=83 then
-                            transData <= get_ascii(R4(15 downto 12));
-                        elsif cnt_10=84 then
-                            transData <= get_ascii(R4(11 downto 8));
-                        elsif cnt_10=85 then
-                            transData <= get_ascii(R4(7 downto 4));
-                        elsif cnt_10=86 then
-                            transData <= get_ascii(R4(3 downto 0));
-                        elsif cnt_10=87 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=88 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=89 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=90 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=91 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=92 then
-                            transData <= x"52";  -- 'R'
-                        elsif cnt_10=93 then
-                            transData <= x"35";  -- '5'
-                        elsif cnt_10=94 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=95 then
-                            transData <= get_ascii(R5(15 downto 12));
-                        elsif cnt_10=96 then
-                            transData <= get_ascii(R5(11 downto 8));
-                        elsif cnt_10=97 then
-                            transData <= get_ascii(R5(7 downto 4));
-                        elsif cnt_10=98 then
-                            transData <= get_ascii(R5(3 downto 0));
-                        elsif cnt_10=99 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=100 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=101 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=102 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=103 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=104 then
-                            transData <= x"52";  -- 'R'
-                        elsif cnt_10=105 then
-                            transData <= x"36";  -- '6'
-                        elsif cnt_10=106 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=107 then
-                            transData <= get_ascii(R6(15 downto 12));
-                        elsif cnt_10=108 then
-                            transData <= get_ascii(R6(11 downto 8));
-                        elsif cnt_10=109 then
-                            transData <= get_ascii(R6(7 downto 4));
-                        elsif cnt_10=110 then
-                            transData <= get_ascii(R6(3 downto 0));
-                        elsif cnt_10=111 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=112 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=113 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=114 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=115 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=116 then
-                            transData <= x"52";  -- 'R'
-                        elsif cnt_10=117 then
-                            transData <= x"37";  -- '7'
-                        elsif cnt_10=118 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=119 then
-                            transData <= get_ascii(R7(15 downto 12));
-                        elsif cnt_10=120 then
-                            transData <= get_ascii(R7(11 downto 8));
-                        elsif cnt_10=121 then
-                            transData <= get_ascii(R7(7 downto 4));
-                        elsif cnt_10=122 then
-                            transData <= get_ascii(R7(3 downto 0));
-                        elsif cnt_10=123 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=124 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=125 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=126 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=127 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=128 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=129 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=130 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=131 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=132 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=133 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=134 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=135 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=136 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=137 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=138 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=139 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=140 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=141 then
-                            transData <= x"20";  -- 'space'
-                        elsif cnt_10=142 then
-                            transData <= x"54";  -- 'T'
-                        elsif cnt_10=143 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=144 then
-                            transData <= get_ascii(T(15 downto 12));
-                        elsif cnt_10=145 then
-                            transData <= get_ascii(T(11 downto 8));
-                        elsif cnt_10=146 then
-                            transData <= get_ascii(T(7 downto 4));
-                        elsif cnt_10=147 then
-                            transData <= get_ascii(T(3 downto 0));
-                        elsif cnt_10=148 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=149 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=150 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=151 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=152 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=153 then
-                            transData <= x"50";  -- 'P'
-                        elsif cnt_10=154 then
-                            transData <= x"43";  -- 'C'
-                        elsif cnt_10=155 then
-                            transData <= x"20";  -- space
-                        elsif cnt_10=156 then
-                            transData <= get_ascii(PC_RF_PC(15 downto 12));
-                        elsif cnt_10=157 then
-                            transData <= get_ascii(PC_RF_PC(11 downto 8));
-                        elsif cnt_10=158 then
-                            transData <= get_ascii(PC_RF_PC(7 downto 4));
-                        elsif cnt_10=159 then
-                            transData <= get_ascii(PC_RF_PC(3 downto 0));
-                        end if;
+                        if newR='1' and cnt_10<=160 then
                         
-                        if cnt_10=0 then
-                            tempAddr := rcdAddr;
-                            tempAddr(6 downto 0) := (others => '0');
-                            if tempAddr(11 downto 7)=29 then
-                                tempAddr(11 downto 7) := (others => '0');
-                            else
-                                tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
-                            end if;
-                            rcdAddr <= tempAddr;
-                        elsif cnt_10=80 then
-                            tempAddr := rcdAddr;
-                            tempAddr(6 downto 0) := (others => '0');
-                            if tempAddr(11 downto 7)=29 then
-                                tempAddr(11 downto 7) := (others => '0');
-                            else
-                                tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
-                            end if;
-                            rcdAddr <= tempAddr;
-                        elsif cnt_10<160 then
-                            rcdAddr <= rcdAddr + 1;
-                        end if;
-                        if cnt_10=160 then
-                            ps2ready <= "0";
-                            newR <= '0';
-                        elsif cnt_10<160 then
-                            ps2ready <= "1";
-                        end if;
-                        
-                    elsif doDel='1' then
-                    
-                        if caps='0' and cnt_10<=80 then
-                    
-                            if cnt_10<80 then
+                            if cnt_10=0 then
+                                transData <= x"52";  -- 'R'
+                            elsif cnt_10=1 then
+                                transData <= x"30";  -- '0'
+                            elsif cnt_10=2 then
                                 transData <= x"20";  -- space
+                            elsif cnt_10=3 then
+                                transData <= get_ascii(R0(15 downto 12));
+                            elsif cnt_10=4 then
+                                transData <= get_ascii(R0(11 downto 8));
+                            elsif cnt_10=5 then
+                                transData <= get_ascii(R0(7 downto 4));
+                            elsif cnt_10=6 then
+                                transData <= get_ascii(R0(3 downto 0));
+                            elsif cnt_10=7 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=8 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=9 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=10 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=11 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=12 then
+                                transData <= x"52";  -- 'R'
+                            elsif cnt_10=13 then
+                                transData <= x"31";  -- '1'
+                            elsif cnt_10=14 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=15 then
+                                transData <= get_ascii(R1(15 downto 12));
+                            elsif cnt_10=16 then
+                                transData <= get_ascii(R1(11 downto 8));
+                            elsif cnt_10=17 then
+                                transData <= get_ascii(R1(7 downto 4));
+                            elsif cnt_10=18 then
+                                transData <= get_ascii(R1(3 downto 0));
+                            elsif cnt_10=19 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=20 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=21 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=22 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=23 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=24 then
+                                transData <= x"52";  -- 'R'
+                            elsif cnt_10=25 then
+                                transData <= x"32";  -- '2'
+                            elsif cnt_10=26 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=27 then
+                                transData <= get_ascii(R2(15 downto 12));
+                            elsif cnt_10=28 then
+                                transData <= get_ascii(R2(11 downto 8));
+                            elsif cnt_10=29 then
+                                transData <= get_ascii(R2(7 downto 4));
+                            elsif cnt_10=30 then
+                                transData <= get_ascii(R2(3 downto 0));
+                            elsif cnt_10=31 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=32 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=33 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=34 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=35 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=36 then
+                                transData <= x"52";  -- 'R'
+                            elsif cnt_10=37 then
+                                transData <= x"33";  -- '3'
+                            elsif cnt_10=38 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=39 then
+                                transData <= get_ascii(R3(15 downto 12));
+                            elsif cnt_10=40 then
+                                transData <= get_ascii(R3(11 downto 8));
+                            elsif cnt_10=41 then
+                                transData <= get_ascii(R3(7 downto 4));
+                            elsif cnt_10=42 then
+                                transData <= get_ascii(R3(3 downto 0));
+                            elsif cnt_10=43 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=44 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=45 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=46 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=47 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=48 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=49 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=50 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=51 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=52 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=53 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=54 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=55 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=56 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=57 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=58 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=59 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=60 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=61 then
+                                transData <= x"49";  -- 'I'
+                            elsif cnt_10=62 then
+                                transData <= x"48";  -- 'H'
+                            elsif cnt_10=63 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=64 then
+                                transData <= get_ascii(IH(15 downto 12));
+                            elsif cnt_10=65 then
+                                transData <= get_ascii(IH(11 downto 8));
+                            elsif cnt_10=66 then
+                                transData <= get_ascii(IH(7 downto 4));
+                            elsif cnt_10=67 then
+                                transData <= get_ascii(IH(3 downto 0));
+                            elsif cnt_10=68 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=69 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=70 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=71 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=72 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=73 then
+                                transData <= x"53";  -- 'S'
+                            elsif cnt_10=74 then
+                                transData <= x"50";  -- 'P'
+                            elsif cnt_10=75 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=76 then
+                                transData <= get_ascii(SP(15 downto 12));
+                            elsif cnt_10=77 then
+                                transData <= get_ascii(SP(11 downto 8));
+                            elsif cnt_10=78 then
+                                transData <= get_ascii(SP(7 downto 4));
+                            elsif cnt_10=79 then
+                                transData <= get_ascii(SP(3 downto 0));
+                            elsif cnt_10=80 then
+                                transData <= x"52";  -- 'R'
+                            elsif cnt_10=81 then
+                                transData <= x"34";  -- '4'
+                            elsif cnt_10=82 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=83 then
+                                transData <= get_ascii(R4(15 downto 12));
+                            elsif cnt_10=84 then
+                                transData <= get_ascii(R4(11 downto 8));
+                            elsif cnt_10=85 then
+                                transData <= get_ascii(R4(7 downto 4));
+                            elsif cnt_10=86 then
+                                transData <= get_ascii(R4(3 downto 0));
+                            elsif cnt_10=87 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=88 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=89 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=90 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=91 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=92 then
+                                transData <= x"52";  -- 'R'
+                            elsif cnt_10=93 then
+                                transData <= x"35";  -- '5'
+                            elsif cnt_10=94 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=95 then
+                                transData <= get_ascii(R5(15 downto 12));
+                            elsif cnt_10=96 then
+                                transData <= get_ascii(R5(11 downto 8));
+                            elsif cnt_10=97 then
+                                transData <= get_ascii(R5(7 downto 4));
+                            elsif cnt_10=98 then
+                                transData <= get_ascii(R5(3 downto 0));
+                            elsif cnt_10=99 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=100 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=101 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=102 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=103 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=104 then
+                                transData <= x"52";  -- 'R'
+                            elsif cnt_10=105 then
+                                transData <= x"36";  -- '6'
+                            elsif cnt_10=106 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=107 then
+                                transData <= get_ascii(R6(15 downto 12));
+                            elsif cnt_10=108 then
+                                transData <= get_ascii(R6(11 downto 8));
+                            elsif cnt_10=109 then
+                                transData <= get_ascii(R6(7 downto 4));
+                            elsif cnt_10=110 then
+                                transData <= get_ascii(R6(3 downto 0));
+                            elsif cnt_10=111 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=112 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=113 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=114 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=115 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=116 then
+                                transData <= x"52";  -- 'R'
+                            elsif cnt_10=117 then
+                                transData <= x"37";  -- '7'
+                            elsif cnt_10=118 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=119 then
+                                transData <= get_ascii(R7(15 downto 12));
+                            elsif cnt_10=120 then
+                                transData <= get_ascii(R7(11 downto 8));
+                            elsif cnt_10=121 then
+                                transData <= get_ascii(R7(7 downto 4));
+                            elsif cnt_10=122 then
+                                transData <= get_ascii(R7(3 downto 0));
+                            elsif cnt_10=123 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=124 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=125 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=126 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=127 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=128 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=129 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=130 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=131 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=132 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=133 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=134 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=135 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=136 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=137 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=138 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=139 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=140 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=141 then
+                                transData <= x"20";  -- 'space'
+                            elsif cnt_10=142 then
+                                transData <= x"54";  -- 'T'
+                            elsif cnt_10=143 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=144 then
+                                transData <= get_ascii(T(15 downto 12));
+                            elsif cnt_10=145 then
+                                transData <= get_ascii(T(11 downto 8));
+                            elsif cnt_10=146 then
+                                transData <= get_ascii(T(7 downto 4));
+                            elsif cnt_10=147 then
+                                transData <= get_ascii(T(3 downto 0));
+                            elsif cnt_10=148 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=149 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=150 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=151 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=152 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=153 then
+                                transData <= x"50";  -- 'P'
+                            elsif cnt_10=154 then
+                                transData <= x"43";  -- 'C'
+                            elsif cnt_10=155 then
+                                transData <= x"20";  -- space
+                            elsif cnt_10=156 then
+                                transData <= get_ascii(PC_RF_PC(15 downto 12));
+                            elsif cnt_10=157 then
+                                transData <= get_ascii(PC_RF_PC(11 downto 8));
+                            elsif cnt_10=158 then
+                                transData <= get_ascii(PC_RF_PC(7 downto 4));
+                            elsif cnt_10=159 then
+                                transData <= get_ascii(PC_RF_PC(3 downto 0));
                             end if;
-                        
+                            
                             if cnt_10=0 then
                                 tempAddr := rcdAddr;
                                 tempAddr(6 downto 0) := (others => '0');
+                                if tempAddr(11 downto 7)=29 then
+                                    tempAddr(11 downto 7) := (others => '0');
+                                else
+                                    tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
+                                end if;
                                 rcdAddr <= tempAddr;
                             elsif cnt_10=80 then
                                 tempAddr := rcdAddr;
-                                if tempAddr(11 downto 7)=0 then
-                                    tempAddr(11 downto 7) := "11101";
+                                tempAddr(6 downto 0) := (others => '0');
+                                if tempAddr(11 downto 7)=29 then
+                                    tempAddr(11 downto 7) := (others => '0');
                                 else
-                                    tempAddr(11 downto 7) := tempAddr(11 downto 7) - 1;
+                                    tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
                                 end if;
                                 rcdAddr <= tempAddr;
-                            elsif cnt_10<80 then
+                            elsif cnt_10<160 then
                                 rcdAddr <= rcdAddr + 1;
                             end if;
-                        
-                            if cnt_10=80 then
+                            if cnt_10=160 then
                                 ps2ready <= "0";
-                                doDel <= '0';
-                            else
+                                newR <= '0';
+                            elsif cnt_10<160 then
                                 ps2ready <= "1";
                             end if;
-                        
-                        elsif caps='1' and cnt_10<=2400 then
                             
-                            if cnt_10<2400 then
-                                transData <= x"20";
+                        elsif doDel='1' then
+                        
+                            if caps='0' and cnt_10<=80 then
+                        
+                                if cnt_10<80 then
+                                    transData <= x"20";  -- space
+                                end if;
+                            
+                                if cnt_10=0 then
+                                    tempAddr := rcdAddr;
+                                    tempAddr(6 downto 0) := (others => '0');
+                                    rcdAddr <= tempAddr;
+                                elsif cnt_10=80 then
+                                    tempAddr := rcdAddr;
+                                    if tempAddr(11 downto 7)=0 then
+                                        tempAddr(11 downto 7) := "11101";
+                                    else
+                                        tempAddr(11 downto 7) := tempAddr(11 downto 7) - 1;
+                                    end if;
+                                    rcdAddr <= tempAddr;
+                                elsif cnt_10<80 then
+                                    rcdAddr <= rcdAddr + 1;
+                                end if;
+                            
+                                if cnt_10=80 then
+                                    ps2ready <= "0";
+                                    doDel <= '0';
+                                else
+                                    ps2ready <= "1";
+                                end if;
+                            
+                            elsif caps='1' and cnt_10<=2400 then
+                                
+                                if cnt_10<2400 then
+                                    transData <= x"20";
+                                end if;
+                                
+                                if cnt_10=0 then
+                                    rcdAddr <= (others => '0');
+                                elsif cnt_10=80 or cnt_10=160 or cnt_10=240 or cnt_10=320 or cnt_10=400 or 
+                                      cnt_10=480 or cnt_10=560 or cnt_10=640 or cnt_10=720 or cnt_10=800 or 
+                                      cnt_10=880 or cnt_10=960 or cnt_10=1040 or cnt_10=1120 or cnt_10=1200 or 
+                                      cnt_10=1280 or cnt_10=1360 or cnt_10=1440 or cnt_10=1520 or cnt_10=1600 or 
+                                      cnt_10=1680 or cnt_10=1760 or cnt_10=1840 or cnt_10=1920 or cnt_10=2000 or 
+                                      cnt_10=2080 or cnt_10=2160 or cnt_10=2240 or cnt_10=2320 then
+                                    tempAddr := rcdAddr;
+                                    tempAddr(6 downto 0) := (others => '0');
+                                    tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
+                                    rcdAddr <= tempAddr;
+                                elsif cnt_10=2400 then
+                                    rcdAddr <= "111011001111";
+                                elsif cnt_10<2400 then
+                                    rcdAddr <= rcdAddr + 1;
+                                end if;
+                            
+                                if cnt_10=2400 then
+                                    ps2ready <= "0";
+                                    doDel <= '0';
+                                    caps <= '0';
+                                else
+                                    ps2ready <= "1";
+                                end if;
+                            
                             end if;
                             
-                            if cnt_10=0 then
-                                rcdAddr <= (others => '0');
-                            elsif cnt_10=80 or cnt_10=160 or cnt_10=240 or cnt_10=320 or cnt_10=400 or 
-                                  cnt_10=480 or cnt_10=560 or cnt_10=640 or cnt_10=720 or cnt_10=800 or 
-                                  cnt_10=880 or cnt_10=960 or cnt_10=1040 or cnt_10=1120 or cnt_10=1200 or 
-                                  cnt_10=1280 or cnt_10=1360 or cnt_10=1440 or cnt_10=1520 or cnt_10=1600 or 
-                                  cnt_10=1680 or cnt_10=1760 or cnt_10=1840 or cnt_10=1920 or cnt_10=2000 or 
-                                  cnt_10=2080 or cnt_10=2160 or cnt_10=2240 or cnt_10=2320 then
-                                tempAddr := rcdAddr;
-                                tempAddr(6 downto 0) := (others => '0');
-                                tempAddr(11 downto 7) := tempAddr(11 downto 7) + 1;
-                                rcdAddr <= tempAddr;
-                            elsif cnt_10=2400 then
-                                rcdAddr <= "111011001111";
-                            elsif cnt_10<2400 then
-                                rcdAddr <= rcdAddr + 1;
-                            end if;
-                        
-                            if cnt_10=2400 then
-                                ps2ready <= "0";
-                                doDel <= '0';
-                                caps <= '0';
-                            else
-                                ps2ready <= "1";
-                            end if;
-                        
                         end if;
                         
                     end if;
@@ -1036,20 +1180,20 @@ begin
     
     Process_LXH_MEM: lxh_mem
     port map (
-        wea => lxh_wen,
-        AddrA => lxh_addr,
-        DinA => lxh_data,
         clkA => clk,
-        AddrB => pic_addr,
-        DoutB => lxh_pr,
-        clkB => clk
+        AddrA => pic_addr,
+        DoutA => lxh_pr
     );
     
     Process_ZZ_MEM: zz_mem
     port map (
+        wea => zz_wen,
+        AddrA => zz_addr,
+        DinA => zz_data,
         clkA => clk,
-        AddrA => pic_addr,
-        DoutA => zz_pr
+        AddrB => pic_addr,
+        DoutB => zz_pr,
+        clkB => clk
     );
 
     Process_FIFO_MEM: fifo_mem
@@ -1336,7 +1480,11 @@ begin
                                     ((rcdAddr(11 downto 7)<29 and caddr_origin(11 downto 7)=rcdAddr(11 downto 7)+1) or 
                                      (rcdAddr(11 downto 7)=29 and caddr_origin(11 downto 7)="00000"))) then
                                     tempB <= (others => '0');
-                                    if caps='1' then
+                                    
+                                    if edit='0' then
+                                        tempR <= (others => '1');
+                                        tempG <= (others => '1');
+                                    elsif caps='1' then
                                         tempR <= (others => '1');
                                         tempG <= (others => '0');
                                     elsif caps='0' then

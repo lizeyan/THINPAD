@@ -603,7 +603,7 @@ begin
 				end case;
 				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 			when "01010" => -- slti
-				data_conflict (x => '0' & if_rf_st(10 downto 8), y => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
+				data_conflict (x => '0' & if_rf_st(10 downto 8), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
 				normal_ins (last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd, nn_written_st => nn_written_st, n_written_st => n_written_st, target_failed => target_failed);
 			when "01111" => --move
 				data_conflict (x => '0' & if_rf_st(7 downto 5), last_rd => last_rd, last_lw_rd => last_lw_rd, last_last_lw_rd => last_last_lw_rd);
@@ -909,7 +909,7 @@ begin
 					swsrc <= '0';
 					aluop <= "0110";
 					dir := "100";
-					regwrbop <= "10";
+					regwrbop <= "11";
                     memen <= '0';
             when "01101" => -- li
 					ramrwop <= '0';
@@ -955,7 +955,7 @@ begin
 					swsrc <= '0';
 					aluop <= "0001";
 					dir := "100";
-					regwrbop <= "00";
+					regwrbop <= "10";
                     memen <= '0';
 				when "01111" => --move
 					ramrwop <= '0';
@@ -1008,7 +1008,7 @@ begin
                     when "01010" => --cmp
                         aluop <= "0110";
                         dir := "100";
-                        regwrbop <= "10";
+                        regwrbop <= "11";
                     when "01101" => --or
                         aluop <= "0010";
                         dir := "000";

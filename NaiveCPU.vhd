@@ -474,6 +474,7 @@ architecture Behavioral of NaiveCPU is
     component RegWrbModule
         Port ( RegWrbOp : in STD_LOGIC_VECTOR(1 downto 0);
                RegWrbOut : out STD_LOGIC_VECTOR(15 downto 0);
+               MEM_RF_FlagZero : in STD_LOGIC;
                
                MEM_RF_FlagSign : in STD_LOGIC;
                MEM_RF_LW : in STD_LOGIC_VECTOR(15 downto 0);
@@ -496,9 +497,9 @@ architecture Behavioral of NaiveCPU is
                ps2clk : in std_logic;
                ps2data : in std_logic;
                
-               lxh_wen : in std_logic_vector(0 downto 0);
-               lxh_addr : in std_logic_vector(12 downto 0);
-               lxh_data : in std_logic_vector(15 downto 0);
+               zz_wen : in std_logic_vector(0 downto 0);
+               zz_addr : in std_logic_vector(12 downto 0);
+               zz_data : in std_logic_vector(15 downto 0);
                
                R0 : in std_logic_vector(15 downto 0);
                R1 : in std_logic_vector(15 downto 0);
@@ -1081,6 +1082,7 @@ begin
         RegWrbOut => RegWrbData,
         
         MEM_RF_FlagSign => EXE_RF_Flags(1),
+        MEM_RF_FlagZero => EXE_RF_Flags(2),
         MEM_RF_LW => MEM_LW,
         MEM_RF_Res => EXE_RF_Res
     );
@@ -1100,9 +1102,9 @@ begin
         ps2clk => ps2clk,
         ps2data => ps2data,
         
-        lxh_wen => vga_wen,
-        lxh_addr => vga_addr,
-        lxh_data => vga_data,
+        zz_wen => vga_wen,
+        zz_addr => vga_addr,
+        zz_data => vga_data,
         
         
         R0 => R0,
